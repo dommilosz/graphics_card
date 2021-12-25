@@ -194,7 +194,7 @@ def Test_Objects():
     print(ser.read());
     ser.write([8,4,3,69]);
     print(ser.read());
-    ser.write([8,4,2,0,0,200,0,200]);
+    ser.write([8,4,2,0,0,100,0,100]);
     print(ser.read());
     ser.write([8,4,7,255,0]);
     print(ser.read());
@@ -204,19 +204,43 @@ def Test_Objects():
         print(ser.read());
         ser.write([8,3,2,1,255,255,255,255]);
         print(ser.read());
-        time.sleep(0.5)
+        time.sleep(0.1)
+
+def Sound(_data, repeat):
+    if(len(_data)>65535):
+        return
+    data = [9]
+    data += U16ToBytes(len(data))
+    data += [repeat]
+    data += _data;
+    ser.write(data)
+    print(ser.read());
+
+def SoundS(_data, repeat):
+    for sound in _data:
+        Sound([sound],repeat)
+
+def CreateTextObj():
+	ser.write([8,1,0])
+    print(ser.read())
+	ser.write([8,1,0])
+    print(ser.read())
 
 #512*400
-Init(3);
+Init(2);
 time.sleep(5)
+CreateTextObj()
 #transition()
-Clear(0)
-Test_Objects()
+#Clear(0)
+#Test_Objects()
 #Line(0,0,170,400,0b11100000)
 #Line(170,0,340,400,0b00011100)
 #Line(340,0,511,400,0b00000011)
 
 #ImgStream()
 
+#for i in range(256):
+#	Sound([i,i],False)
+#	#time.sleep(0.1)
 
 ser.close()     

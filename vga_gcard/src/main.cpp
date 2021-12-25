@@ -19,28 +19,18 @@ void CommandRoutine()
 		u8 resolution = GetU8();
 		u8 tiles = GetU8();
 		u32 board_size = GetU32();
-		u32 additional_map_size = GetU32();
 
-		vga.Init(resolution, tiles, board_size, additional_map_size);
+		vga.Init(resolution, tiles, board_size);
 
 		Status(STATUS_OK);
 	}
 	//WRITE - (0-box, 1-add), offset, length, data......
 	else if (cmd == 2)
 	{
-		u8 location = GetU8();
 		u32 offset = GetU32();
 		u32 length = GetU32();
 
-		u8 *p = NULL;
-		if (location == 0)
-		{
-			u8 *p = vga.box_ptr;
-		}
-		else if (location == 1)
-		{
-			u8 *p = vga.additional_ptr;
-		}
+		u8 *p = vga.box_ptr;
 
 		ReadBuffer(p + offset, length);
 	}
@@ -239,6 +229,11 @@ void CommandRoutine()
 				Objects::Push(ObjType_CIRCLE, index);
 				Status(STATUS_OK);
 			}
+			else if (type == 4)
+			{
+				Objects::Push(ObjType_LINE, index);
+				Status(STATUS_OK);
+			}
 			else
 			{
 				Status(STATUS_NOT_FOUND);
@@ -280,14 +275,9 @@ void CommandRoutine()
 		else if (action == 5)
 		{
 			u8 relative = GetU8();
-			Object *_obj = objects[index];
-			if (_obj->type != ObjType_RECTANGLE)
-			{
-				Status(STATUS_WRONG_TYPE);
-				return;
-			}
 			int16_t w = GetU16();
 			int16_t h = GetU16();
+			ObjAssert(ObjType_RECTANGLE);
 			ObjectRect *obj = (ObjectRect *)objects[index];
 			obj->Resize(w, h, relative);
 			Status(STATUS_OK);
@@ -296,13 +286,8 @@ void CommandRoutine()
 		else if (action == 6)
 		{
 			u8 relative = GetU8();
-			Object *_obj = objects[index];
-			if (_obj->type != ObjType_CIRCLE)
-			{
-				Status(STATUS_WRONG_TYPE);
-				return;
-			}
 			int16_t r = GetU16();
+			ObjAssert(ObjType_CIRCLE);
 			ObjectCircle *obj = (ObjectCircle *)objects[index];
 			obj->SetRadius(r, relative);
 			Status(STATUS_OK);
@@ -310,19 +295,49 @@ void CommandRoutine()
 		//Change Mask,Fill [Assume Circle]
 		else if (action == 7)
 		{
-			Object *_obj = objects[index];
-			if (_obj->type != ObjType_CIRCLE)
-			{
-				Status(STATUS_WRONG_TYPE);
-				return;
-			}
 			int16_t mask = GetU8();
 			int fill = GetU8();
+			ObjAssert(ObjType_CIRCLE);
 			ObjectCircle *obj = (ObjectCircle *)objects[index];
 			obj->SetMask(mask);
 			obj->SetFill(fill);
 			Status(STATUS_OK);
 		}
+		//Move line [Assume Line]
+		else if (action == 8)
+		{
+			u8 relative = GetU8();
+			int16_t x = GetU16();
+			int16_t y = GetU16();
+			int16_t x2 = GetU16();
+			int16_t y2 = GetU16();
+			ObjAssert(ObjType_LINE);
+			ObjectLine *obj = (ObjectLine *)objects[index];
+			obj->Move(x,y,x2,y2,relative);
+			Status(STATUS_OK);
+		}
+		//Set text [Assume Text]
+		else if (action == 9){
+			u16 txt_length = GetU16();
+			ObjAssert(ObjType_TEXT);
+			ObjectText *obj = (ObjectText *)objects[index];
+			char c[txt_length + 1];
+			ReadBuffer((u8*)c, txt_length);
+			c[txt_length] = 0;
+			obj->SetText(c);
+
+		}
+		//Set text scale [Assume Text]
+		else if (action == 10){
+			u16 sX = GetU16();
+			u16 sY = GetU16();
+			u16 fH = GetU16();
+			ObjAssert(ObjType_TEXT);
+			ObjectText *obj = (ObjectText *)objects[index];
+			obj->SetScale(sX,sY,fH);
+
+		}
+
 
 		//List All
 		else if (action == 255)
@@ -350,7 +365,21 @@ void CommandRoutine()
 			return;
 		}
 	}
-	
+
+	//PLAY SOUND
+	else if (cmd == 9){
+		u16 length = GetU16();
+		u8 repeat = GetU8();
+		u8 c[length];
+		ReadBuffer(c, length);
+		PlaySound(c,length,repeat);
+		Status(STATUS_OK);
+	}
+	//STOP Sound
+	else if (cmd == (9|128)){
+		StopSound();
+		Status(STATUS_OK);
+	}
 	//TEST cmd
 	else if (cmd == 254)
 	{
@@ -369,7 +398,7 @@ void CommandRoutine()
 
 void draw_no_signal()
 {
-	vga.Init(RES_EGA, FORM_8BIT, 255, 0);
+	vga.Init(RES_EGA, FORM_8BIT, 255);
 }
 
 int main()
@@ -377,10 +406,21 @@ int main()
 	stdio_init_all();
 	memcpy(Font_Copy, FontBold8x8, sizeof(FontBold8x8));
 	Objects::Init();
+	vga.Allocate();
+	PWMSndInit();
 	//draw_no_signal();
+
+	gpio_init(LED_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
 
 	while (true)
 	{
+		gpio_put(LED_PIN, 0);
 		CommandRoutine();
+		gpio_put(LED_PIN, 1);
+		if(getchar_timeout_us(0)==PICO_ERROR_TIMEOUT){
+			sleep_ms(100);
+		}
 	}
+	
 }

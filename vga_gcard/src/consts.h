@@ -32,6 +32,7 @@ const u32 RES_LOOKUP_H[] = {RES_ZX_S_H, RES_CGA_S_H, RES_QVGA_S_H, RES_EGA_S_H, 
 #define ObjType_RECTANGLE 1
 #define ObjType_TEXT 2
 #define ObjType_CIRCLE 3 
+#define ObjType_LINE 4
 
 #define STATUS_OK 0
 #define STATUS_NOT_FOUND 1

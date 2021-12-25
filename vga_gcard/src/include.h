@@ -13,4 +13,4 @@
 #include "../vga.pio.h"		// VGA PIO compilation
 
 // main
-#include "main.h"		// main code
+//#include "main.h"		// main code
