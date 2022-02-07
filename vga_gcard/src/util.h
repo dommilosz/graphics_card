@@ -51,3 +51,13 @@ bool GetBit(u32 byte, u8 bit)
 {
 	return byte >> bit & 1;
 }
+
+char *GetLine(char *c){
+	int i = 0;
+	while(c[i]!=10){
+		if(c[i] == 0)return 0;
+		i++;
+	}
+	c[i] = 0;
+	return c+i+1;
+}

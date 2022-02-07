@@ -7,7 +7,7 @@ public:
     u8 *main_mem_end = 0;
 
     u8 *obj_mem_ptr = 0;
-    u8 *obj_mem_end = 0;
+    u8 *tmp_buff = 0;
 
     u8 *box_ptr = NULL;
     int box_len = 0;
@@ -172,11 +172,11 @@ public:
     {
         free(main_mem_ptr);
         free(obj_mem_ptr);
-        main_mem_ptr = (u8 *)malloc(RES_QVGA_S);
-        main_mem_end = main_mem_ptr + RES_QVGA_S - 1;
+        main_mem_ptr = (u8 *)malloc(MALLOC_SIZE);
+        main_mem_end = main_mem_ptr + MALLOC_SIZE - 1;
         obj_mem_ptr = (u8 *)malloc(OBJECTS_COUNT*OBJECT_ALLOC);
-        obj_mem_end = obj_mem_ptr+(OBJECTS_COUNT*OBJECT_ALLOC)-1;
-        if (main_mem_ptr == 0 || obj_mem_ptr == 0)
+        tmp_buff = (u8 *)malloc(TMP_BUFFER_SIZE);
+        if (main_mem_ptr == 0 || obj_mem_ptr == 0 || tmp_buff == 0)
         {
             while (1)
             {

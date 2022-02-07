@@ -172,8 +172,6 @@ public:
         text = (char *)this+OBJECT_SIZE;
         memcpy(text,c,len);
         text[len] = 0;
-        printf("text: %u ", text);
-        printf("*text: %s ", text);
         Objects::OnChange();
     }
 
@@ -187,7 +185,15 @@ public:
 
     void Draw()
     {
-        DrawText(&vga.TmpCanvas, (const char *)text, x, y, color, Font_Copy, fH, sX, sY);
+        memcpy(vga.tmp_buff,text,TMP_BUFFER_SIZE);
+        char *c = (char *)vga.tmp_buff;
+        u16 dY = 0;
+        while(c!=0){
+            char *c2 = GetLine(c);
+            DrawText(&vga.TmpCanvas, (const char *)c, x, y+dY, color, Font_Copy, fH, sX, sY);
+            c = c2;
+            dY+=sY*fH;
+        }
     }
 
     ~ObjectText()

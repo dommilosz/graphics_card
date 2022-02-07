@@ -320,6 +320,8 @@ void CommandRoutine()
 		else if (action == 9)
 		{
 			u16 txt_length = GetU16();
+			if(txt_length>(OBJECT_TXT_SIZE-1))txt_length=(OBJECT_TXT_SIZE-1);
+
 			ObjAssert(ObjType_TEXT);
 			ObjectText *obj = (ObjectText *)objects[index];
 			char c[txt_length + 1];
