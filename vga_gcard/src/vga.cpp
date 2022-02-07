@@ -3,8 +3,12 @@ ALIGNED u8 Font_Copy[sizeof(FontBold8x8)];
 class VGA
 {
 public:
-    u8 *main_mem_ptr;
-    u8 *main_mem_end;
+    u8 *main_mem_ptr = 0;
+    u8 *main_mem_end = 0;
+
+    u8 *obj_mem_ptr = 0;
+    u8 *obj_mem_end = 0;
+
     u8 *box_ptr = NULL;
     int box_len = 0;
     u16 Width;
@@ -37,8 +41,9 @@ public:
         box_len = bs;
 
         box_ptr = main_mem_ptr;
-        TmpCanvas.img = main_mem_ptr+bs;
-        if(TmpCanvas.img>main_mem_end){
+        TmpCanvas.img = main_mem_ptr + bs;
+        if (TmpCanvas.img > main_mem_end)
+        {
             TmpCanvas.img = 0;
         }
 
@@ -110,6 +115,13 @@ public:
             if (cbuf[0] == 0)
                 break;
 
+            if (cbuf[0] == 10)
+            {
+                cY += 8;
+                cX = 0;
+                continue;
+            }
+
             DrawText(&Canvas, (const char *)cbuf, cX, cY, color, Font_Copy, fh, sx, sy);
             cX += 8;
 
@@ -132,6 +144,13 @@ public:
             if (cbuf[0] == 0)
                 break;
 
+            if (cbuf[0] == 10)
+            {
+                cY += 8;
+                cX = 0;
+                continue;
+            }
+
             DrawTextBg(&Canvas, (const char *)cbuf, cX, cY, color, bgcolor, Font_Copy, fh, sx, sy);
             cX += 8;
 
@@ -149,12 +168,19 @@ public:
         cY = y;
     }
 
-    void Allocate(){
+    void Allocate()
+    {
         free(main_mem_ptr);
-        main_mem_ptr = (u8*)malloc(RES_EGA_S);
-        main_mem_end = main_mem_ptr + RES_EGA_S-1;
-        if(main_mem_ptr==0){
-            while(1);
+        free(obj_mem_ptr);
+        main_mem_ptr = (u8 *)malloc(RES_QVGA_S);
+        main_mem_end = main_mem_ptr + RES_QVGA_S - 1;
+        obj_mem_ptr = (u8 *)malloc(OBJECTS_COUNT*OBJECT_ALLOC);
+        obj_mem_end = obj_mem_ptr+(OBJECTS_COUNT*OBJECT_ALLOC)-1;
+        if (main_mem_ptr == 0 || obj_mem_ptr == 0)
+        {
+            while (1)
+            {
+            };
         }
     }
 };

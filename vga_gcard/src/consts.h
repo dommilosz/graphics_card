@@ -42,3 +42,16 @@ const u32 RES_LOOKUP_H[] = {RES_ZX_S_H, RES_CGA_S_H, RES_QVGA_S_H, RES_EGA_S_H, 
 #define STATUS_WRONG_VALUE 5
 
 #define Status(x) printf("%c",x);return
+
+#define putu(x) printf("%c",x)
+#define putu16(x) putu(x >> 8);putu(x & 0x00FF)
+
+#define OBJECTS_COUNT 32
+
+#define OBJECT_SIZE 32
+#define OBJECT_TXT_SIZE 224
+
+#define OBJECT_ALLOC OBJECT_SIZE+OBJECT_TXT_SIZE
+
+#define _malloc malloc
+#define malloc(x) _malloc(x);printf("malloced: %u",x)

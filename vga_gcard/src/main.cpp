@@ -34,7 +34,7 @@ void CommandRoutine()
 
 		ReadBuffer(p + offset, length);
 	}
-	//CLEAR
+	//CLEAR - color
 	else if (cmd == 3)
 	{
 		u8 data = GetU8();
@@ -113,7 +113,7 @@ void CommandRoutine()
 			Status(STATUS_OK);
 		}
 		else if (feature_type == (3 | 128))
-		{ //Circle
+		{ //Circle fill
 			u16 x1 = GetU16();
 			u16 y1 = GetU16();
 			u16 r = GetU16();
@@ -133,13 +133,13 @@ void CommandRoutine()
 		u8 type = GetU8();
 		if (type == 0)
 		{ //Normal text 8x8 font
-			u16 txt_length = GetU16();
 			u16 x = GetU16();
 			u16 y = GetU16();
 			u8 color = GetU8();
 			u8 fh = GetU8();
 			u8 sx = GetU8();
 			u8 sy = GetU8();
+			u16 txt_length = GetU16();
 			u8 c[txt_length + 1];
 			ReadBuffer(c, txt_length);
 			c[txt_length] = 0;
@@ -148,7 +148,6 @@ void CommandRoutine()
 		}
 		else if (type == (0 | 64))
 		{ //Normal text 8x8 font but with background
-			u16 txt_length = GetU16();
 			u16 x = GetU16();
 			u16 y = GetU16();
 			u8 color = GetU8();
@@ -156,6 +155,7 @@ void CommandRoutine()
 			u8 fh = GetU8();
 			u8 sx = GetU8();
 			u8 sy = GetU8();
+			u16 txt_length = GetU16();
 			u8 c[txt_length + 1];
 			ReadBuffer(c, txt_length);
 			c[txt_length] = 0;
@@ -164,11 +164,11 @@ void CommandRoutine()
 		}
 		else if (type == 1)
 		{ //Cursored text 8x8 font
-			u16 txt_length = GetU16();
 			u8 color = GetU8();
 			u8 fh = GetU8();
 			u8 sx = GetU8();
 			u8 sy = GetU8();
+			u16 txt_length = GetU16();
 			u8 c[txt_length + 1];
 			ReadBuffer(c, txt_length);
 			c[txt_length] = 0;
@@ -178,12 +178,12 @@ void CommandRoutine()
 		}
 		else if (type == (1 | 64))
 		{ //Cursored text 8x8 font background
-			u16 txt_length = GetU16();
 			u8 color = GetU8();
 			u8 bgcolor = GetU8();
 			u8 fh = GetU8();
 			u8 sx = GetU8();
 			u8 sy = GetU8();
+			u16 txt_length = GetU16();
 			u8 c[txt_length + 1];
 			ReadBuffer(c, txt_length);
 			c[txt_length] = 0;
@@ -295,8 +295,8 @@ void CommandRoutine()
 		//Change Mask,Fill [Assume Circle]
 		else if (action == 7)
 		{
-			int16_t mask = GetU8();
-			int fill = GetU8();
+			u8 mask = GetU8();
+			u8 fill = GetU8();
 			ObjAssert(ObjType_CIRCLE);
 			ObjectCircle *obj = (ObjectCircle *)objects[index];
 			obj->SetMask(mask);
@@ -313,70 +313,90 @@ void CommandRoutine()
 			int16_t y2 = GetU16();
 			ObjAssert(ObjType_LINE);
 			ObjectLine *obj = (ObjectLine *)objects[index];
-			obj->Move(x,y,x2,y2,relative);
+			obj->Move(x, y, x2, y2, relative);
 			Status(STATUS_OK);
 		}
 		//Set text [Assume Text]
-		else if (action == 9){
+		else if (action == 9)
+		{
 			u16 txt_length = GetU16();
 			ObjAssert(ObjType_TEXT);
 			ObjectText *obj = (ObjectText *)objects[index];
 			char c[txt_length + 1];
-			ReadBuffer((u8*)c, txt_length);
+			ReadBuffer((u8 *)c, txt_length);
 			c[txt_length] = 0;
 			obj->SetText(c);
-
+			Status(STATUS_OK);
 		}
 		//Set text scale [Assume Text]
-		else if (action == 10){
+		else if (action == 10)
+		{
 			u16 sX = GetU16();
 			u16 sY = GetU16();
 			u16 fH = GetU16();
 			ObjAssert(ObjType_TEXT);
 			ObjectText *obj = (ObjectText *)objects[index];
-			obj->SetScale(sX,sY,fH);
-
+			obj->SetScale(sX, sY, fH);
+			Status(STATUS_OK);
 		}
-
 
 		//List All
 		else if (action == 255)
 		{
-			bool showXY = GetU8();
-			for (u8 i = 0; i < 128; i++)
+			bool details = GetU8();
+			uint16_t length = 0;
+			for (u8 i = 0; i < OBJECTS_COUNT; i++)
 			{
 				if (objects[i] != 0)
 				{
-					printf("%c%c", i, objects[i]->type);
-					if (showXY)
+					length+=1;
+					length+=1;
+					if (details)
+					{
+						length+=2; //x
+						length+=2; //y
+						length+=1; //visible
+						length+=1; //color
+					}
+					length+=1;
+				}
+			}
+			putu16(length);
+			for (u8 i = 0; i < OBJECTS_COUNT; i++)
+			{
+				if (objects[i] != 0)
+				{
+					putu(i);
+					putu(objects[i]->type);
+					if (details)
 					{
 						u16 x = objects[i]->x;
 						u16 y = objects[i]->y;
-						u8 x1 = x >> 8;
-						u8 x2 = x & 0x00FF;
-						u8 y1 = y >> 8;
-						u8 y2 = y & 0x00FF;
-						printf("%c%c", x1, x2);
-						printf("%c%c", y1, y2);
+						putu16(x);
+						putu16(y);
+						putu(objects[i]->visibility);
+						putu(objects[i]->color);
 					}
-					printf("%c", 0);
+					putu(0);
 				}
 			}
-			return;
+			Status(STATUS_OK);
 		}
 	}
 
 	//PLAY SOUND
-	else if (cmd == 9){
+	else if (cmd == 9)
+	{
 		u16 length = GetU16();
 		u8 repeat = GetU8();
 		u8 c[length];
 		ReadBuffer(c, length);
-		PlaySound(c,length,repeat);
+		PlaySound(c, length, repeat);
 		Status(STATUS_OK);
 	}
 	//STOP Sound
-	else if (cmd == (9|128)){
+	else if (cmd == (9 | 128))
+	{
 		StopSound();
 		Status(STATUS_OK);
 	}
@@ -411,16 +431,16 @@ int main()
 	//draw_no_signal();
 
 	gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
+	gpio_set_dir(LED_PIN, GPIO_OUT);
 
 	while (true)
 	{
 		gpio_put(LED_PIN, 0);
 		CommandRoutine();
 		gpio_put(LED_PIN, 1);
-		if(getchar_timeout_us(0)==PICO_ERROR_TIMEOUT){
+		if (getchar_timeout_us(0) == PICO_ERROR_TIMEOUT)
+		{
 			sleep_ms(100);
 		}
 	}
-	
 }

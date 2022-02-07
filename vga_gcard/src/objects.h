@@ -20,8 +20,6 @@
         }                                \
     }
 
-
-
 #define ObjAssert(x)               \
     Object *_obj = objects[index]; \
     if (_obj->type != x)           \
@@ -34,24 +32,18 @@ class Object;
 class ObjectRect;
 class ObjectCircle;
 class ObjectLine;
-Object *objects[128];
+
+Object *objects[OBJECTS_COUNT];
+bool ONC = true;
 
 class Objects
 {
 public:
     static void Init()
     {
-        for (u8 i = 0; i < 128; i++)
-        {
-            if (objects[i] != 0)
-            {
-                Free(i);
-            }
-        }
+        ONC = true;
         memset(objects, 0, sizeof(objects));
     }
-
-    static void PushObject(Object *obj, u8 index);
 
     static void DrawAll()
     {
@@ -64,7 +56,7 @@ public:
             memset(vga.TmpCanvas.img, vga.bgcolor, vga.box_len);
         }
 
-        for (u8 i = 0; i < 128; i++)
+        for (u8 i = 0; i < OBJECTS_COUNT; i++)
         {
             if (objects[i] != 0)
             {
@@ -80,6 +72,7 @@ public:
 
     static void OnChange()
     {
+        if(!ONC)return;
         Objects::DrawAll();
     }
 
@@ -161,7 +154,8 @@ public:
 
     void Free() { this->~ObjectRect(); }
 
-    size_t Size(){
+    size_t Size()
+    {
         return sizeof(ObjectRect);
     }
 };
@@ -174,18 +168,12 @@ public:
 
     void SetText(char *c)
     {
-        printf("free %d",text);
-        if (text != 0)
-        {
-            free(text);
-        }
-
-        printf("len..");
         int len = strlen(c);
-        printf("len: %d", len);
-        text = (char *)malloc(len + 1);
-        printf(text);
+        text = (char *)this+OBJECT_SIZE;
+        memcpy(text,c,len);
         text[len] = 0;
+        printf("text: %u ", text);
+        printf("*text: %s ", text);
         Objects::OnChange();
     }
 
@@ -204,12 +192,13 @@ public:
 
     ~ObjectText()
     {
-        free(text);
+        
     }
 
     void Free() { this->~ObjectText(); }
 
-    size_t Size(){
+    size_t Size()
+    {
         return sizeof(ObjectText);
     }
 };
@@ -262,7 +251,8 @@ public:
 
     void Free() { this->~ObjectCircle(); }
 
-    size_t Size(){
+    size_t Size()
+    {
         return sizeof(ObjectCircle);
     }
 };
@@ -299,7 +289,8 @@ public:
 
     void Free() { this->~ObjectLine(); }
 
-    size_t Size(){
+    size_t Size()
+    {
         return sizeof(ObjectLine);
     }
 };
