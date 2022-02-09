@@ -5,6 +5,7 @@
 
 VGA vga;
 
+
 #include "objects.cpp"
 
 void CommandRoutine()
@@ -341,6 +342,18 @@ void CommandRoutine()
 			obj->SetScale(sX, sY, fH);
 			Status(STATUS_OK);
 		}
+		//set code
+		else if (action == 11)
+		{
+			u8 code_length = GetU8();
+			if(code_length>(OBJECT_CODE_SIZE-1))code_length=(OBJECT_CODE_SIZE-1);
+			Object *obj = (Object *)objects[index];
+			u8 c[code_length + 1];
+			ReadBuffer((u8 *)c, code_length);
+			c[code_length] = 0;
+			obj->SetCode(c,code_length);
+			Status(STATUS_OK);
+		}
 
 		//List All
 		else if (action == 255)
@@ -439,10 +452,17 @@ int main()
 	{
 		gpio_put(LED_PIN, 0);
 		CommandRoutine();
+		for (u8 i = 0; i < OBJECTS_COUNT; i++)
+        {
+            if (objects[i] != 0)
+            {
+                objects[i]->ExecCommands();
+            }
+        }
 		gpio_put(LED_PIN, 1);
 		if (getchar_timeout_us(0) == PICO_ERROR_TIMEOUT)
 		{
-			sleep_ms(100);
+			sleep_ms(1);
 		}
 	}
 }

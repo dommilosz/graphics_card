@@ -28,6 +28,7 @@
         return;                    \
     }
 
+
 class Object;
 class ObjectRect;
 class ObjectCircle;
@@ -72,7 +73,8 @@ public:
 
     static void OnChange()
     {
-        if(!ONC)return;
+        if (!ONC)
+            return;
         Objects::DrawAll();
     }
 
@@ -86,6 +88,12 @@ public:
     u16 x, y, w, h;
     u8 color;
     bool visibility = true;
+
+    u16 cmd_delay_left = 0;
+    u8 *cmd_pointer;
+    u8 *cmd_pointer_instr;
+    u16 cmd_reg_A = 0;
+    u16 cmd_reg_B = 0;
 
     void Move(int16_t x, int16_t y, u8 relative)
     {
@@ -121,6 +129,17 @@ public:
             return 1;
         }
 
+        Objects::OnChange();
+    }
+
+    void ExecCommands();
+
+    void SetCode(u8 *c,u8 length)
+    {
+        cmd_pointer = (u8 *)this + OBJECT_SIZE;
+        memcpy(cmd_pointer, c, length);
+        cmd_pointer_instr = cmd_pointer;
+        cmd_pointer[length] = 0;
         Objects::OnChange();
     }
 
@@ -169,8 +188,8 @@ public:
     void SetText(char *c)
     {
         int len = strlen(c);
-        text = (char *)this+OBJECT_SIZE;
-        memcpy(text,c,len);
+        text = (char *)this + OBJECT_SIZE+OBJECT_CODE_SIZE;
+        memcpy(text, c, len);
         text[len] = 0;
         Objects::OnChange();
     }
@@ -185,20 +204,20 @@ public:
 
     void Draw()
     {
-        memcpy(vga.tmp_buff,text,TMP_BUFFER_SIZE);
+        memcpy(vga.tmp_buff, text, TMP_BUFFER_SIZE);
         char *c = (char *)vga.tmp_buff;
         u16 dY = 0;
-        while(c!=0){
+        while (c != 0)
+        {
             char *c2 = GetLine(c);
-            DrawText(&vga.TmpCanvas, (const char *)c, x, y+dY, color, Font_Copy, fH, sX, sY);
+            DrawText(&vga.TmpCanvas, (const char *)c, x, y + dY, color, Font_Copy, fH, sX, sY);
             c = c2;
-            dY+=sY*fH;
+            dY += sY * fH;
         }
     }
 
     ~ObjectText()
     {
-        
     }
 
     void Free() { this->~ObjectText(); }

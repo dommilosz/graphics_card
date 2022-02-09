@@ -61,3 +61,5 @@ char *GetLine(char *c){
 	c[i] = 0;
 	return c+i+1;
 }
+
+#define mergeu16(x,y) ((x << 8) | y)

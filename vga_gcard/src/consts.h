@@ -48,4 +48,4 @@ const u32 RES_LOOKUP_H[] = {RES_ZX_S_H, RES_CGA_S_H, RES_QVGA_S_H, RES_EGA_S_H, 
 #define putu(x) printf("%c",x)
 #define putu16(x) putu(x >> 8);putu(x & 0x00FF)
 
-#define OBJECT_ALLOC (OBJECT_SIZE+OBJECT_TXT_SIZE)
+#define OBJECT_ALLOC (OBJECT_SIZE+OBJECT_TXT_SIZE+OBJECT_CODE_SIZE)
