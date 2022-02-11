@@ -19,6 +19,27 @@
             ((ObjectLine *)obj)->x();    \
         }                                \
     }
+    
+#define ObjectActionWR(x, obj)           \
+    {                                    \
+        u8 type = obj->type;             \
+        if (type == ObjType_RECTANGLE)   \
+        {                                \
+            ((ObjectRect *)obj)->x();    \
+        }                                \
+        else if (type == ObjType_TEXT)   \
+        {                                \
+            ((ObjectText *)obj)->x();    \
+        }                                \
+        else if (type == ObjType_CIRCLE) \
+        {                                \
+            ((ObjectCircle *)obj)->x();  \
+        }                                \
+        else if (type == ObjType_LINE)   \
+        {                                \
+            ((ObjectLine *)obj)->x();    \
+        }                                \
+    }
 
 #define ObjAssert(x)               \
     Object *_obj = objects[index]; \
@@ -28,7 +49,7 @@
         return;                    \
     }
 
-
+u8 obj_mem[OBJECTS_COUNT * OBJECT_ALLOC];
 class Object;
 class ObjectRect;
 class ObjectCircle;
@@ -48,15 +69,6 @@ public:
 
     static void DrawAll()
     {
-        if (!vga.double_buffer)
-        {
-            vga.Clear();
-        }
-        else
-        {
-            memset(vga.TmpCanvas.img, vga.bgcolor, vga.box_len);
-        }
-
         for (u8 i = 0; i < OBJECTS_COUNT; i++)
         {
             if (objects[i] != 0)
@@ -79,6 +91,8 @@ public:
     }
 
     static void Push(u8 type, u8 index);
+
+    static void ExecCode();
 };
 
 class Object
@@ -89,14 +103,23 @@ public:
     u8 color;
     bool visibility = true;
 
-    u16 cmd_delay_left = 0;
-    u8 *cmd_pointer;
-    u8 *cmd_pointer_instr;
+    absolute_time_t cmd_delay_to;
+    u8 cmd_asset = 0;
+    CODE_ADDRESS_TYPE cmd_pointer = 0;
     u16 cmd_reg_A = 0;
     u16 cmd_reg_B = 0;
 
+    u16 draw_reg_x = 0;
+    u16 draw_reg_y = 0;
+    u16 draw_reg_x2 = 0;
+    u16 draw_reg_y2 = 0;
+    u16 draw_reg_color = 0;
+
+    void clear();
+
     void Move(int16_t x, int16_t y, u8 relative)
     {
+        clear();
         if (relative == 0)
         {
             this->x = x;
@@ -118,12 +141,14 @@ public:
 
     void ChangeVisibility(u8 v)
     {
+        clear();
         this->visibility = v;
         Objects::OnChange();
     }
 
     u8 Rotate(u16 deg)
     {
+        clear();
         if (deg > 360)
         {
             return 1;
@@ -134,12 +159,11 @@ public:
 
     void ExecCommands();
 
-    void SetCode(u8 *c,u8 length)
+    void SetCode(u8 asset)
     {
-        cmd_pointer = (u8 *)this + OBJECT_SIZE;
-        memcpy(cmd_pointer, c, length);
-        cmd_pointer_instr = cmd_pointer;
-        cmd_pointer[length] = 0;
+        cmd_asset = asset;
+        cmd_pointer = 0;
+        cmd_delay_to = make_timeout_time_us(0);
         Objects::OnChange();
     }
 
@@ -151,6 +175,7 @@ class ObjectRect : public Object
 public:
     void Resize(int16_t w, int16_t h, u8 relative)
     {
+        clear();
         if (relative == 0)
         {
             this->w = w;
@@ -169,6 +194,11 @@ public:
         DrawRect(&vga.TmpCanvas, x, y, w, h, color);
     }
 
+    void clear()
+    {
+        DrawRect(&vga.TmpCanvas, x, y, w, h, vga.bgcolor);
+    }
+
     ~ObjectRect() {}
 
     void Free() { this->~ObjectRect(); }
@@ -182,20 +212,19 @@ public:
 class ObjectText : public Object
 {
 public:
-    char *text = 0;
+    u8 text_asset = 0;
     u16 sX, sY, fH;
 
-    void SetText(char *c)
+    void SetText(u8 asset)
     {
-        int len = strlen(c);
-        text = (char *)this + OBJECT_SIZE+OBJECT_CODE_SIZE;
-        memcpy(text, c, len);
-        text[len] = 0;
+        clear();
+        text_asset = asset;
         Objects::OnChange();
     }
 
     void SetScale(u16 sX, u16 sY, u16 fH)
     {
+        clear();
         this->sX = sX;
         this->sY = sY;
         this->fH = fH;
@@ -204,16 +233,35 @@ public:
 
     void Draw()
     {
-        memcpy(vga.tmp_buff, text, TMP_BUFFER_SIZE);
-        char *c = (char *)vga.tmp_buff;
+        Draw(color);
+    }
+
+    void Draw(u8 color){
         u16 dY = 0;
-        while (c != 0)
+        int i = 0;
+        while (true)
         {
-            char *c2 = GetLine(c);
-            DrawText(&vga.TmpCanvas, (const char *)c, x, y + dY, color, Font_Copy, fH, sX, sY);
-            c = c2;
-            dY += sY * fH;
+            char data[2];
+            data[0] = ReadAsset(text_asset, i);
+            data[1] = 0;
+
+            DrawText(&vga.TmpCanvas, (const char *)data, x, y + dY, color, Font_Copy, fH, sX, sY);
+
+            if (data[0] == 0)
+            {
+                return;
+            }
+            if (data[0] == 10)
+            {
+                dY += sY * fH;
+            }
+            i++;
         }
+    }
+
+    void clear()
+    {
+        Draw(vga.bgcolor);
     }
 
     ~ObjectText()
@@ -237,6 +285,7 @@ public:
 
     void SetRadius(int16_t r, bool relative)
     {
+        clear();
         if (!relative)
         {
             this->r = r;
@@ -250,17 +299,24 @@ public:
 
     void SetMask(u8 mask)
     {
+        clear();
         this->mask = mask;
         Objects::OnChange();
     }
 
     void SetFill(bool fill)
     {
+        clear();
         this->full = fill;
         Objects::OnChange();
     }
 
     void Draw()
+    {
+        Draw(color);
+    }
+
+    void Draw(u8 color)
     {
         if (this->full)
         {
@@ -270,6 +326,11 @@ public:
         {
             DrawCircle(&vga.TmpCanvas, this->x, this->y, this->r, this->color, this->mask);
         }
+    }
+
+    void clear()
+    {
+        Draw(vga.bgcolor);
     }
 
     ~ObjectCircle() {}
@@ -288,6 +349,7 @@ public:
     u16 x2, y2;
     void Move(int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool relative)
     {
+        clear();
         if (relative == 0)
         {
             this->x = x1;
@@ -308,6 +370,11 @@ public:
     void Draw()
     {
         DrawLine(&Canvas, x, y, x2, y2, color);
+    }
+
+    void clear()
+    {
+        DrawLine(&Canvas, x, y, x2, y2, vga.bgcolor);
     }
 
     ~ObjectLine() {}

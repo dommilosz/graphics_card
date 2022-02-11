@@ -40,14 +40,13 @@ inline void Objects::Push(u8 type, u8 index)
 {
 	ONC = false;
 	size_t size = objects[index]->GetSize();
-	objects[index] = (Object *)(vga.obj_mem_ptr + (OBJECT_ALLOC * index));
+	objects[index] = (Object *)(obj_mem + (OBJECT_ALLOC * index));
 	memset(objects[index], 0, OBJECT_ALLOC);
 	objects[index]->type = type;
 	objects[index]->ChangeVisibility(true);
 
 	if (objects[index]->type == ObjType_TEXT)
 	{
-		((ObjectText *)objects[index])->text = NULL;
 		((ObjectText *)objects[index])->SetScale(1, 1, 8);
 		((ObjectText *)objects[index])->ChangeColor(255);
 	}
@@ -59,26 +58,36 @@ inline void Objects::Push(u8 type, u8 index)
 #include "commands.cpp"
 inline void Object::ExecCommands()
 {
-	if (cmd_delay_left > 0)
+	if (!time_reached(cmd_delay_to))return;
+
+	if (cmd_asset == 0)
+		return;
+
+	if (ReadAsset(cmd_asset, cmd_pointer) == 0)
 	{
-		cmd_delay_left--;
+		cmd_pointer = 0;
 		return;
 	}
 
-	if (cmd_pointer == 0)
-		return;
+	ExecuteCommand(this);
+}
 
-	if (cmd_pointer_instr >= (cmd_pointer + OBJECT_CODE_SIZE))
+inline void Objects::ExecCode()
+{	
+	for (u8 i = 0; i < OBJECTS_COUNT; i++)
 	{
-		cmd_pointer_instr = cmd_pointer;
-		return;
+		if (objects[i] != 0)
+		{
+			objects[i]->ExecCommands();
+		}
 	}
-
-	if (cmd_pointer_instr == 0 || cmd_pointer_instr[0] == 0)
+	if (cmd_changed)
 	{
-		cmd_pointer_instr = cmd_pointer;
-		return;
+		Objects::DrawAll();
+		cmd_changed = false;
 	}
+}
 
-	cmd_pointer_instr = ExecuteCommand(cmd_pointer_instr, this);
+inline void Object::clear(){
+	ObjectActionWR(clear,this);
 }

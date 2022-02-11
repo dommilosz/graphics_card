@@ -43,6 +43,8 @@ void DrawClear(sCanvas* canvas);
 // Draw point
 void DrawPoint(sCanvas* canvas, int x, int y, u8 col);
 
+u8 GetPoint(sCanvas *canvas, int x, int y);
+
 // Draw line
 void DrawLine(sCanvas* canvas, int x1, int y1, int x2, int y2, u8 col);
 

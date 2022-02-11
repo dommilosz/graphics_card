@@ -2,10 +2,9 @@
 #include "consts.h"
 #include "util.h"
 #include "vga.cpp"
-
 VGA vga;
-
-
+cRandom rnd;
+#include "assets.cpp"
 #include "objects.cpp"
 
 void CommandRoutine()
@@ -320,15 +319,10 @@ void CommandRoutine()
 		//Set text [Assume Text]
 		else if (action == 9)
 		{
-			u16 txt_length = GetU16();
-			if(txt_length>(OBJECT_TXT_SIZE-1))txt_length=(OBJECT_TXT_SIZE-1);
-
 			ObjAssert(ObjType_TEXT);
 			ObjectText *obj = (ObjectText *)objects[index];
-			char c[txt_length + 1];
-			ReadBuffer((u8 *)c, txt_length);
-			c[txt_length] = 0;
-			obj->SetText(c);
+			u8 asset = GetU8();
+			obj->SetText(asset);
 			Status(STATUS_OK);
 		}
 		//Set text scale [Assume Text]
@@ -345,13 +339,9 @@ void CommandRoutine()
 		//set code
 		else if (action == 11)
 		{
-			u8 code_length = GetU8();
-			if(code_length>(OBJECT_CODE_SIZE-1))code_length=(OBJECT_CODE_SIZE-1);
 			Object *obj = (Object *)objects[index];
-			u8 c[code_length + 1];
-			ReadBuffer((u8 *)c, code_length);
-			c[code_length] = 0;
-			obj->SetCode(c,code_length);
+			u8 code_asset = GetU8();
+			obj->SetCode(code_asset);
 			Status(STATUS_OK);
 		}
 
@@ -364,16 +354,16 @@ void CommandRoutine()
 			{
 				if (objects[i] != 0)
 				{
-					length+=1;
-					length+=1;
+					length += 1;
+					length += 1;
 					if (details)
 					{
-						length+=2; //x
-						length+=2; //y
-						length+=1; //visible
-						length+=1; //color
+						length += 2; //x
+						length += 2; //y
+						length += 1; //visible
+						length += 1; //color
 					}
-					length+=1;
+					length += 1;
 				}
 			}
 			putu16(length);
@@ -415,6 +405,17 @@ void CommandRoutine()
 		StopSound();
 		Status(STATUS_OK);
 	}
+
+	//write asset
+	else if (cmd == 10)
+	{
+		u8 asset = GetU8();
+		u16 length = GetU16();
+		u8 c[length + 1];
+		ReadBuffer(c, length);
+		c[length] = 0;
+		WriteAsset(asset, c, length);
+	}
 	//TEST cmd
 	else if (cmd == 254)
 	{
@@ -448,21 +449,13 @@ int main()
 	gpio_init(LED_PIN);
 	gpio_set_dir(LED_PIN, GPIO_OUT);
 
+	rnd.InitSeed();
+
 	while (true)
 	{
 		gpio_put(LED_PIN, 0);
 		CommandRoutine();
-		for (u8 i = 0; i < OBJECTS_COUNT; i++)
-        {
-            if (objects[i] != 0)
-            {
-                objects[i]->ExecCommands();
-            }
-        }
+		Objects::ExecCode();
 		gpio_put(LED_PIN, 1);
-		if (getchar_timeout_us(0) == PICO_ERROR_TIMEOUT)
-		{
-			sleep_ms(1);
-		}
 	}
 }

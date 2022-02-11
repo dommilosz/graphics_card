@@ -1,13 +1,13 @@
 
 ALIGNED u8 Font_Copy[sizeof(FontBold8x8)];
+u8 vga_mem[MALLOC_SIZE];
+#include "hardware/structs/rosc.h"
+
 class VGA
 {
 public:
     u8 *main_mem_ptr = 0;
     u8 *main_mem_end = 0;
-
-    u8 *obj_mem_ptr = 0;
-    u8 *tmp_buff = 0;
 
     u8 *box_ptr = NULL;
     int box_len = 0;
@@ -26,14 +26,12 @@ public:
     void Clear(u8 color)
     {
         memset(box_ptr, color, box_len);
-        memset(TmpCanvas.img, color, box_len);
         bgcolor = color;
     }
 
     void Clear()
     {
         memset(box_ptr, bgcolor, box_len);
-        memset(TmpCanvas.img, bgcolor, box_len);
     }
 
     void Init(u8 resolution, u8 tiles, u32 bs)
@@ -170,13 +168,9 @@ public:
 
     void Allocate()
     {
-        free(main_mem_ptr);
-        free(obj_mem_ptr);
-        main_mem_ptr = (u8 *)malloc(MALLOC_SIZE);
+        main_mem_ptr = vga_mem;
         main_mem_end = main_mem_ptr + MALLOC_SIZE - 1;
-        obj_mem_ptr = (u8 *)malloc(OBJECTS_COUNT*OBJECT_ALLOC);
-        tmp_buff = (u8 *)malloc(TMP_BUFFER_SIZE);
-        if (main_mem_ptr == 0 || obj_mem_ptr == 0 || tmp_buff == 0)
+        if (main_mem_ptr == 0)
         {
             while (1)
             {
