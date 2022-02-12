@@ -21,11 +21,11 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <Arduino.h>
 #include <hardware/gpio.h>
 #include <hardware/i2c.h>
 #include <hardware/irq.h>
 #include <hardware/regs/intctrl.h>
-#include "Arduino.h"
 #include "Wire.h"
 
 #ifdef USE_TINYUSB
@@ -115,7 +115,7 @@ static void _handler1() {
 // Slave mode
 void TwoWire::begin(uint8_t addr) {
     if (_running) {
-        i2c_set_slave_mode(_i2c, true, addr);
+        // ERROR
         return;
     }
     _slave = true;
@@ -146,7 +146,7 @@ void TwoWire::onIRQ() {
         _i2c->hw->clr_start_det;
     }
     if (_i2c->hw->intr_stat & (1 << 9)) {
-        if (_onReceiveCallback) {
+        if (_onReceiveCallback && _buffLen) {
             _onReceiveCallback(_buffLen);
         }
         _buffLen = 0;
@@ -181,6 +181,8 @@ void TwoWire::end() {
         return;
     }
     i2c_deinit(_i2c);
+    pinMode(_sda, INPUT);
+    pinMode(_scl, INPUT);
     _running = false;
     _txBegun = false;
 }

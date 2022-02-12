@@ -23,15 +23,15 @@
 
 #pragma once
 
+#include <Arduino.h>
 #include "api/HardwareI2C.h"
-#include "api/Common.h"
 #include <hardware/i2c.h>
 
 // WIRE_HAS_END means Wire has end()
 #define WIRE_HAS_END 1
 
 #ifndef WIRE_BUFFER_SIZE
-#define WIRE_BUFFER_SIZE 128
+#define WIRE_BUFFER_SIZE 256
 #endif
 
 class TwoWire : public HardwareI2C {
