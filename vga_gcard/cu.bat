@@ -1,1 +1,0 @@
-cm.bat && move program.uf2 D:/

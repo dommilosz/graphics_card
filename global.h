@@ -180,11 +180,7 @@ extern const ALIGNED u8 FontThin8x8[2048];
 #include "hardware/watchdog.h"
 #include "hardware/xosc.h"
 
-#include "boot/picoboot.h"
-#include "boot/uf2.h"
-
 #include "pico.h"
-#include "tusb_config.h"
 
 #include "pico/assert.h"
 #include "pico/binary_info.h"
@@ -200,7 +196,6 @@ extern const ALIGNED u8 FontThin8x8[2048];
 #include "pico/int64_ops.h"
 #include "pico/lock_core.h"
 #include "pico/malloc.h"
-#include "pico/mem_ops.h"
 #include "pico/multicore.h"
 #include "pico/mutex.h"
 #include "pico/platform.h"
@@ -208,7 +203,6 @@ extern const ALIGNED u8 FontThin8x8[2048];
 #include "pico/runtime.h"
 #include "pico/sem.h"
 #include "pico/stdio.h"
-#include "pico/stdio_semihosting.h"
 #include "pico/stdio_uart.h"
 #include "pico/stdio_usb.h"
 #include "pico/stdlib.h"
@@ -234,16 +228,16 @@ extern const ALIGNED u8 FontThin8x8[2048];
 #include "pico/util/queue.h"
 
 // PicoVGA includes
-#include "_picovga/define.h"	// common definitions of C and ASM
-#include "_picovga/util/canvas.h" // canvas
-#include "_picovga/util/overclock.h" // overclock
-#include "_picovga/util/print.h" // print to attribute text buffer
-#include "_picovga/util/rand.h"	// random number generator
-#include "_picovga/util/mat2d.h" // 2D transformation matrix
-#include "_picovga/util/pwmsnd.h" // PWM sound output
-#include "_picovga/vga_pal.h"	// VGA colors and palettes
-#include "_picovga/vga_vmode.h"	// VGA videomodes
-#include "_picovga/vga_layer.h"	// VGA layers
-#include "_picovga/vga_screen.h" // VGA screen layout
-#include "_picovga/vga_util.h"	// VGA utilities
-#include "_picovga/vga.h"	 // VGA output
+#include "libraries/_picovga/define.h"	// common definitions of C and ASM
+#include "libraries/_picovga/util/canvas.h" // canvas
+#include "libraries/_picovga/util/overclock.h" // overclock
+#include "libraries/_picovga/util/print.h" // print to attribute text buffer
+#include "libraries/_picovga/util/rand.h"	// random number generator
+#include "libraries/_picovga/util/mat2d.h" // 2D transformation matrix
+#include "libraries/_picovga/util/pwmsnd.h" // PWM sound output
+#include "libraries/_picovga/vga_pal.h"	// VGA colors and palettes
+#include "libraries/_picovga/vga_vmode.h"	// VGA videomodes
+#include "libraries/_picovga/vga_layer.h"	// VGA layers
+#include "libraries/_picovga/vga_screen.h" // VGA screen layout
+#include "libraries/_picovga/vga_util.h"	// VGA utilities
+#include "libraries/_picovga/vga.h"	 // VGA output

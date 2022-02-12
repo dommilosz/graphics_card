@@ -1,3 +1,9 @@
-[submodule "libraries/I2CCom"]
+
+[submodule "arduino-pico"]
+	path = arduino-pico
+	url = https://github.com/earlephilhower/arduino-pico
+
+
+[submodule "I2CCom"]
 	path = libraries/I2CCom
 	url = https://github.com/dommilosz/I2CCom

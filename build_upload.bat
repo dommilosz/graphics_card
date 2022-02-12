@@ -1,0 +1,1 @@
+build.bat && move vga_graphics_card.uf2 D:/
