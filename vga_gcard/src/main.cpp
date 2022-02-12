@@ -6,6 +6,8 @@ VGA vga;
 cRandom rnd;
 #include "assets.cpp"
 #include "objects.cpp"
+#include "I2CCom.h"
+I2CCom_Slave I2CCom(25,&Wire1);
 
 void CommandRoutine()
 {
@@ -437,6 +439,21 @@ void draw_no_signal()
 	vga.Init(RES_EGA, FORM_8BIT, 255);
 }
 
+void receiveEvent(int action_id)
+{
+  if (!I2CCom.receiveEvent()) {
+
+  }
+}
+
+void requestEvent()
+{
+  if (!I2CCom.requestEvent()) {
+
+  }
+}
+
+
 int main()
 {
 	stdio_init_all();
@@ -451,11 +468,17 @@ int main()
 
 	rnd.InitSeed();
 
+	pinMode(26,INPUT_PULLUP);
+	pinMode(27,INPUT_PULLUP);
+	I2CCom.begin();
+	I2CCom._wire->onReceive(receiveEvent);
+	I2CCom._wire->onRequest(requestEvent);
+
 	while (true)
 	{
-		gpio_put(LED_PIN, 0);
+		u8 ready = I2CCom.ready();
+		digitalWrite(LED_PIN, ready == 0);
 		CommandRoutine();
 		Objects::ExecCode();
-		gpio_put(LED_PIN, 1);
 	}
 }

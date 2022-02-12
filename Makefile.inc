@@ -166,10 +166,20 @@ SRC += ../_picovga/font/font_thin_8x8.cpp
 # C++ sdk
 SRC += ../_sdk/new_delete.cpp
 
+
+SRC += ../libraries/arduino_core/millis.cpp
+SRC += ../libraries/arduino_core/wiring_digital.cpp
+SRC += ../libraries/Wire/src/Wire.cpp
+
 # Includes
 IPATH += -I./src
 IPATH += -I../_sdk/include
 IPATH += -I../_tinyusb
+IPATH += -I../libraries/Wire/src
+IPATH += -I../libraries/arduino_core
+IPATH += -I../libraries/I2CCom/
+IPATH += -I../libraries/rpipico/
+IPATH += -I../libraries/generic/
 
 ##############################################################################
 # Configuration
@@ -485,3 +495,4 @@ endif
 # List of dependencies not creating files
 
 .PHONY: clean all createdirs elf bin hex lst sym siz uf2
+
