@@ -114,12 +114,11 @@ static void _handler1() {
 
 // Slave mode
 void TwoWire::begin(uint8_t addr) {
-    if (_running) {
-        // ERROR
-        return;
-    }
     _slave = true;
-    i2c_init(_i2c, _clkHz);
+    if (!_running) {
+        i2c_init(_i2c, _clkHz);
+    }
+    
     i2c_set_slave_mode(_i2c, true, addr);
 
     // Our callback IRQ
