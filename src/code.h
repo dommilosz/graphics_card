@@ -51,6 +51,19 @@ u16 GetProperty(u8 prop, Object *obj)
         return obj->visibility;
     if (prop == 0x06)
         return obj->type;
+    if (prop == 0x07)
+        return obj->cmd_asset;
+    if (prop == 0x08)
+    {
+        if (obj->type == ObjType_TEXT)
+        {
+            return ((ObjectText *)obj)->text_asset;
+        }
+        else
+        {
+            return 0;
+        }
+    }
 
     if (prop == 0xD0)
         return vga.Width;
@@ -115,6 +128,19 @@ void SetProperty(u8 prop, u16 value, Object *obj)
         obj->visibility = value;
     if (prop == 0x06)
         obj->type = value;
+    if (prop == 0x07)
+    {
+        obj->cmd_asset = value;
+        obj->cmd_pointer = 0;
+        obj->cmd_delay_to = make_timeout_time_us(0);
+    }
+    if (prop == 0x08)
+    {
+        if (obj->type == ObjType_TEXT)
+        {
+            ((ObjectText *)obj)->text_asset = value;
+        }
+    }
     cmd_changed = true;
 }
 
@@ -244,6 +270,16 @@ bool HandleLoads(u8 instr, Object *obj)
         obj->cmd_reg_B = tmp;
         return true;
     }
+    if (instr == 0xEB)
+    { // number => prop (16b)
+        SetProperty(NextByte(obj), Next2Byte(obj), obj);
+        return true;
+    }
+    if (instr == 0xEC)
+    { // number => prop (8b)
+        SetProperty(NextByte(obj), NextByte(obj), obj);
+        return true;
+    }
 
     return false;
 }
@@ -352,30 +388,37 @@ bool HandleRandom(u8 instr, Object *obj)
     if (instr == 0xC0)
     { //A = 16 bit random
         obj->cmd_reg_A = rnd.U16();
+        return true;
     }
     if (instr == 0xC1)
     { //A = 16 bit random (range)
         obj->cmd_reg_A = rnd.U16Max(Next2Byte(obj));
+        return true;
     }
     if (instr == 0xC2)
     { //A = 8 bit random (range)
         obj->cmd_reg_A = rnd.U16Max(NextByte(obj));
+        return true;
     }
     if (instr == 0xC3)
     { //A = 16 bit random (range)
         obj->cmd_reg_A = rnd.U16MinMax(Next2Byte(obj), Next2Byte(obj));
+        return true;
     }
     if (instr == 0xC4)
     { //A = 8 bit random (range)
         obj->cmd_reg_A = rnd.U16MinMax(NextByte(obj), NextByte(obj));
+        return true;
     }
     if (instr == 0xC5)
     { //A = bit random (range) 0 - B
         obj->cmd_reg_A = rnd.U16Max(obj->cmd_reg_B);
+        return true;
     }
     if (instr == 0xC6)
     { //A = bit random (range) A - B
         obj->cmd_reg_A = rnd.U16MinMax(obj->cmd_reg_A, obj->cmd_reg_B);
+        return true;
     }
     return false;
 }
@@ -436,7 +479,7 @@ bool HandleDraw(u8 instr, Object *obj)
         u16 x2 = obj->draw_reg_x2;
         u16 y2 = obj->draw_reg_y2;
         u8 col = obj->draw_reg_color;
-        DrawLine(&Canvas, x, y,x2,y2, col);
+        DrawLine(&Canvas, x, y, x2, y2, col);
         return true;
     }
     if (instr == 0xB7)
@@ -446,7 +489,19 @@ bool HandleDraw(u8 instr, Object *obj)
         u16 x2 = Next2Byte(obj);
         u16 y2 = Next2Byte(obj);
         u8 col = NextByte(obj);
-        DrawLine(&Canvas, x, y,x2,y2, col);
+        DrawLine(&Canvas, x, y, x2, y2, col);
+        return true;
+    }
+    return false;
+}
+bool HandleAssets(u8 instr, Object *obj)
+{
+    if (instr == 0xA0)
+    { //set asset - asset, data
+        u8 asset_id = NextByte(obj);
+        u16 length = Next2Byte(obj);
+        u8 buff[length];
+        WriteAsset(asset_id, buff, length);
         return true;
     }
     return false;
@@ -475,6 +530,8 @@ bool ExecuteCommand(Object *obj)
     if (HandleRandom(instr, obj))
         return true;
     if (HandleDraw(instr, obj))
+        return true;
+    if (HandleAssets(instr, obj))
         return true;
 
     return false;

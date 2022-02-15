@@ -1,3 +1,7 @@
+#ifndef __CONSTS_H_VGA
+#define __CONSTS_H_VGA
+
+#include "include.h"
 #include "config.h"
 
 #define RES_ZX_S 256 * 192
@@ -43,11 +47,6 @@ const u32 RES_LOOKUP_H[] = {RES_ZX_S_H, RES_CGA_S_H, RES_QVGA_S_H, RES_EGA_S_H, 
 #define STATUS_WRONG_TYPE 4
 #define STATUS_WRONG_VALUE 5
 
-#define Status(x) printf("%c",x);return
-
-#define putu(x) printf("%c",x)
-#define putu16(x) putu(x >> 8);putu(x & 0x00FF)
-
 #define OBJECT_ALLOC (OBJECT_SIZE)
 
 u8 tmp_buff[TMP_BUFFER_SIZE];
@@ -56,4 +55,5 @@ u8 tmp_buff[TMP_BUFFER_SIZE];
 typedef u8 CODE_ADDRESS_TYPE;
 #elif CODE_ADDRESS_SIZE == 16
 typedef u16 CODE_ADDRESS_TYPE;
+#endif
 #endif

@@ -1,5 +1,3 @@
-#include "objects.h"
-
 inline void Objects::Draw(int index)
 {
 	if (objects[index]->visibility == 0)
@@ -55,10 +53,11 @@ inline void Objects::Push(u8 type, u8 index)
 	Objects::OnChange();
 }
 
-#include "commands.cpp"
+#include "code.h"
 inline void Object::ExecCommands()
 {
-	if (!time_reached(cmd_delay_to))return;
+	if (!time_reached(cmd_delay_to))
+		return;
 
 	if (cmd_asset == 0)
 		return;
@@ -73,7 +72,7 @@ inline void Object::ExecCommands()
 }
 
 inline void Objects::ExecCode()
-{	
+{
 	for (u8 i = 0; i < OBJECTS_COUNT; i++)
 	{
 		if (objects[i] != 0)
@@ -88,6 +87,45 @@ inline void Objects::ExecCode()
 	}
 }
 
-inline void Object::clear(){
-	ObjectActionWR(clear,this);
+inline void Object::clear()
+{
+	ObjectActionWR(clear, this);
+}
+
+inline void Objects::OnChangingAsset(u8 asset)
+{
+	for (u8 i = 0; i < OBJECTS_COUNT; i++)
+	{
+		if (objects[i] != 0)
+		{
+			Object *obj = objects[i];
+			if (obj->cmd_asset == asset)
+			{
+				//NOTHING TO DO (CODE WILL BE RESET IN OnChangedAsset, code execution is not async)
+			}
+			else if (obj->type == ObjType_TEXT && ((ObjectText *)obj)->text_asset == asset)
+			{
+				obj->clear();
+			}
+		}
+	}
+}
+
+inline void Objects::OnChangedAsset(u8 asset)
+{
+	for (u8 i = 0; i < OBJECTS_COUNT; i++)
+	{
+		if (objects[i] != 0)
+		{
+			Object *obj = objects[i];
+			if (obj->cmd_asset == asset)
+			{
+				obj->SetCode(asset);
+			}
+			else if (obj->type == ObjType_TEXT && ((ObjectText *)obj)->text_asset == asset)
+			{
+				((ObjectText *)obj)->Draw();
+			}
+		}
+	}
 }

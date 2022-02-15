@@ -1,3 +1,5 @@
+#include "consts.h"
+
 #define ObjectAction(x, index)           \
     {                                    \
         Object *obj = objects[index];    \
@@ -19,7 +21,7 @@
             ((ObjectLine *)obj)->x();    \
         }                                \
     }
-    
+
 #define ObjectActionWR(x, obj)           \
     {                                    \
         u8 type = obj->type;             \
@@ -93,6 +95,10 @@ public:
     static void Push(u8 type, u8 index);
 
     static void ExecCode();
+
+    static void OnChangingAsset(u8 asset);
+
+    static void OnChangedAsset(u8 asset);
 };
 
 class Object
@@ -236,16 +242,16 @@ public:
         Draw(color);
     }
 
-    void Draw(u8 color){
+    void Draw(u8 color)
+    {
         u16 dY = 0;
+        u16 dX = 0;
         int i = 0;
         while (true)
         {
             char data[2];
             data[0] = ReadAsset(text_asset, i);
             data[1] = 0;
-
-            DrawText(&vga.TmpCanvas, (const char *)data, x, y + dY, color, Font_Copy, fH, sX, sY);
 
             if (data[0] == 0)
             {
@@ -254,7 +260,13 @@ public:
             if (data[0] == 10)
             {
                 dY += sY * fH;
+                dX = 0;
+                i++;
+                continue;
             }
+
+            DrawText(&vga.TmpCanvas, (const char *)data, x + dX, y + dY, color, Font_Copy, fH, sX, sY);
+            dX += sX * 8;
             i++;
         }
     }

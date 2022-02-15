@@ -24,10 +24,12 @@ target_sources(vga_graphics_card PUBLIC ./libraries/Wire/src/Wire.cpp)
 target_sources(vga_graphics_card PUBLIC ./arduino-pico/cores/rp2040/delay.cpp)
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "./libraries/_picovga/*.cpp")
 file(GLOB_RECURSE asm_sources CONFIGURE_DEPENDS "./libraries/_picovga/*.S")
+#file(GLOB_RECURSE src_sources CONFIGURE_DEPENDS "./src/*.cpp")
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS "*.cpp")
 
 target_sources(vga_graphics_card PUBLIC ${sources})
 target_sources(vga_graphics_card PUBLIC ${asm_sources})
+target_sources(vga_graphics_card PUBLIC ${src_sources})
 
 # Add pico_stdlib library which aggregates commonly used features
 target_link_libraries(vga_graphics_card pico_stdlib)

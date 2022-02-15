@@ -1,6 +1,28 @@
-u8 GetU8()
+enum data_source{
+	data_source_serial=0,
+	data_source_wire = 1,
+};
+
+data_source UTIL_DATA_SOURCE = data_source_serial;
+
+
+int GetU8()
 {
-	return getchar_timeout_us(100000);
+	if(UTIL_DATA_SOURCE == data_source_serial){
+		return getchar_timeout_us(0);
+	}else if(UTIL_DATA_SOURCE == data_source_wire){
+		if(I2CCom._wire->available()<1)return -2;
+		return I2CCom._wire->read();
+	}
+	return 0;
+}
+
+void putu(u8 byte){
+	if(UTIL_DATA_SOURCE == data_source_serial){
+		printf("%c",byte);
+	}else if(UTIL_DATA_SOURCE == data_source_wire){
+		I2CCom._wire->write(byte);
+	}
 }
 
 u16 GetU16()
@@ -25,16 +47,6 @@ void ReadBuffer(u8 *buf, u32 len)
 	{
 		buf[i] = GetU8();
 	}
-}
-
-char GetChar()
-{
-	char c = getchar_timeout_us(0);
-	if (c == (char)PICO_ERROR_TIMEOUT)
-		c = 0;
-	if ((c >= 'a') && (c <= 'z'))
-		c -= 32;
-	return c;
 }
 
 bool GetBit(u8 byte, u8 bit)
@@ -64,3 +76,5 @@ char *GetLine(char *c){
 
 #define mergeu16(x,y) ((x << 8) | y)
 
+#define Status(x) putu(x);return
+#define putu16(x) putu(x >> 8);putu(x & 0x00FF)
