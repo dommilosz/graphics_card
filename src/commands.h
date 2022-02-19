@@ -1,9 +1,11 @@
 void CommandRoutine(data_source data_source)
 {
-    UTIL_DATA_SOURCE = data_source;
+	UTIL_DATA_SOURCE = data_source;
 	int cmd = GetU8();
 	if (cmd <= 0)
 		return;
+	sleep_ms(10);
+	//printf("cmdr:%u\n",cmd);
 
 	//INIT - resolution, tiles, board_size,
 	if (cmd == 1)
@@ -404,12 +406,18 @@ void CommandRoutine(data_source data_source)
 		u8 asset = GetU8();
 		u16 length = GetU16();
 		Objects::OnChangingAsset(asset);
-		WriteAssetFromDataSource(asset,length);
+		WriteAssetFromDataSource(asset, length);
 		Objects::OnChangedAsset(asset);
+	}
+	//redraw
+	else if (cmd == 11)
+	{
+		vga.Clear();
 	}
 	//TEST cmd
 	else if (cmd == 254)
 	{
+
 	}
 	else if (cmd == 255)
 	{

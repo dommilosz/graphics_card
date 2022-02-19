@@ -7,3 +7,6 @@
 [submodule "I2CCom"]
 	path = libraries/I2CCom
 	url = https://github.com/dommilosz/I2CCom
+[submodule "misc/customasm"]
+	path = misc/customasm
+	url = https://github.com/dommilosz/customasm/

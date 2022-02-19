@@ -13,6 +13,15 @@ u16 Next2Byte(Object *obj)
     return (b1 << 8) | b2;
 }
 
+void NextBuff(u16 length, u8 *buff, Object *obj)
+{
+    printf("buff: %u", length);
+    for (u16 i = 0; i < length; i++)
+    {
+        buff[i] = NextByte(obj);
+    }
+}
+
 CODE_ADDRESS_TYPE NextAddress(Object *obj)
 {
 #if CODE_ADDRESS_SIZE == 8
@@ -71,6 +80,10 @@ u16 GetProperty(u8 prop, Object *obj)
         return vga.Heigth;
     if (prop == 0xD2)
         return vga.bgcolor;
+    if (prop == 0xD3)
+        return millis();
+    if (prop == 0xD4)
+        return micros();
 
     if (prop == 0xF0)
         return obj->draw_reg_color;
@@ -498,10 +511,16 @@ bool HandleAssets(u8 instr, Object *obj)
 {
     if (instr == 0xA0)
     { //set asset - asset, data
-        u8 asset_id = NextByte(obj);
+        u8 asset = NextByte(obj);
         u16 length = Next2Byte(obj);
         u8 buff[length];
-        WriteAsset(asset_id, buff, length);
+        NextBuff(length, buff, obj);
+        Objects::OnChangingAsset(asset);
+        WriteAsset(asset, buff, length);
+        Objects::OnChangedAsset(asset);
+        cmd_changed = true;
+
+        printf("ms: %u; %s; %u\n", millis(), buff, obj->cmd_pointer);
         return true;
     }
     return false;
@@ -516,6 +535,11 @@ bool ExecuteCommand(Object *obj)
     {
         printf("A: %u\n", obj->cmd_reg_A);
         printf("B: %u\n", obj->cmd_reg_B);
+        return true;
+    }
+    if (instr == 0x11)
+    {
+        obj->cmd_delay_to = make_timeout_time_ms(99999999);
         return true;
     }
 

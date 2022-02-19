@@ -1,2 +1,3 @@
 build/*
 .vscode/*
+misc/asm_src/test.asm

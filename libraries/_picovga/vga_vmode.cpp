@@ -467,8 +467,8 @@ void VgaCfgDef(sVgaCfg* cfg)
 	cfg->height = 480;		// height in lines
 	cfg->wfull = 0;			// width of full screen, corresponding to 'hfull' time (0=use 'width' parameter)
 	cfg->video = &VideoVGA;		// used video timings
-	cfg->freq = 120000;		// required minimal system frequency in kHz (real frequency can be higher)
-	cfg->fmax = 270000;		// maximal system frequency in kHz (limit resolution if needed)
+	cfg->freq = 250000;		// required minimal system frequency in kHz (real frequency can be higher)
+	cfg->fmax = 300000;		// maximal system frequency in kHz (limit resolution if needed)
 	cfg->mode[0] = LAYERMODE_BASE;	// modes of overlapped layers 0..3 LAYERMODE_* (LAYERMODE_BASE = layer is off)
 	cfg->mode[1] = LAYERMODE_BASE;	// - mode of layer 0 is ignored (always use LAYERMODE_BASE)
 	cfg->mode[2] = LAYERMODE_BASE;	// - all overlapped layers must use same layer program

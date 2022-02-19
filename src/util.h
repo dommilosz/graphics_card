@@ -41,11 +41,20 @@ u32 GetU32()
 	return u81 << 24 | u82 << 16 | u83 << 8 | u84;
 }
 
+u8 WaitForByte(){
+	for(byte i=0;i<10;i++){
+		int b = GetU8();
+		if(b>=0)return b;
+		sleep_ms(10);
+	}
+	return 0;
+}
+
 void ReadBuffer(u8 *buf, u32 len)
 {
 	for (u32 i = 0; i < len; i++)
 	{
-		buf[i] = GetU8();
+		buf[i] = WaitForByte();
 	}
 }
 
@@ -78,3 +87,5 @@ char *GetLine(char *c){
 
 #define Status(x) putu(x);return
 #define putu16(x) putu(x >> 8);putu(x & 0x00FF)
+
+#define set_sys_clock_mhz(x) set_sys_clock_khz(x*1000,true)

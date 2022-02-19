@@ -78,6 +78,18 @@ public:
                 Draw(i);
             }
         }
+    }
+
+    static void ReDrawAll()
+    {
+        vga.Clear();
+        for (u8 i = 0; i < OBJECTS_COUNT; i++)
+        {
+            if (objects[i] != 0)
+            {
+                Draw(i);
+            }
+        }
         vga.MergeCanvas();
     }
 
@@ -261,6 +273,10 @@ public:
             {
                 dY += sY * fH;
                 dX = 0;
+                i++;
+                continue;
+            }
+            if(data[0] == 13){
                 i++;
                 continue;
             }
