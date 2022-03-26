@@ -103,6 +103,9 @@
 	
 	line => 0xB6
 	line {x:u16}, {y:u16}, {x2:u16}, {y2:u16}, {color:u8} => 0xB7 @ x @ y @ x2 @ y2 @ color 
+
+	rect => 0xB8
+	rect {x:u16}, {y:u16}, {w:u16}, {h:u16}, {color:u8} => 0xB9 @ x @ y @ w @ h @ color 
 	
 	read A, B => 0xB3
 	read {x:u16}, {y:u16} => 0xB2 @ x @ y

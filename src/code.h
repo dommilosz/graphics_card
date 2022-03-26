@@ -22,6 +22,25 @@ void NextBuff(u16 length, u8 *buff, Object *obj)
     }
 }
 
+u8 WriteAssetFromAssetDataSource(u8 asset,u16 length, Object *obj){
+    if(asset<1)return 0;
+    RemoveAsset(asset);
+    u16 wi = 0;
+    for(u16 i =0;i<ALLOC_SECTORS;i++){
+        if(alloc_table[i] == 0){
+            alloc_table[i] = asset;
+            memset(alloc_memory+(i*SECTOR_SIZE),0x00,SECTOR_SIZE);
+            for(u8 w = 0;w<SECTOR_SIZE;w++){
+                if(wi >= length)return 1;
+                alloc_memory[(i*SECTOR_SIZE)+w] = NextByte(obj);
+                wi++;
+                if(wi >= length)return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 CODE_ADDRESS_TYPE NextAddress(Object *obj)
 {
 #if CODE_ADDRESS_SIZE == 8
@@ -505,6 +524,26 @@ bool HandleDraw(u8 instr, Object *obj)
         DrawLine(&Canvas, x, y, x2, y2, col);
         return true;
     }
+    if (instr == 0xB8)
+    { //draw rect regs
+        u16 x = obj->draw_reg_x;
+        u16 y = obj->draw_reg_y;
+        u16 w = obj->draw_reg_x2;
+        u16 h = obj->draw_reg_y2;
+        u8 col = obj->draw_reg_color;
+        DrawRect(&Canvas, x, y, w, h, col);
+        return true;
+    }
+    if (instr == 0xB9)
+    { //draw rect parm
+        u16 x = Next2Byte(obj);
+        u16 y = Next2Byte(obj);
+        u16 w = Next2Byte(obj);
+        u16 h = Next2Byte(obj);
+        u8 col = NextByte(obj);
+        DrawRect(&Canvas, x, y, w, h, col);
+        return true;
+    }
     return false;
 }
 bool HandleAssets(u8 instr, Object *obj)
@@ -513,14 +552,10 @@ bool HandleAssets(u8 instr, Object *obj)
     { //set asset - asset, data
         u8 asset = NextByte(obj);
         u16 length = Next2Byte(obj);
-        u8 buff[length];
-        NextBuff(length, buff, obj);
         Objects::OnChangingAsset(asset);
-        WriteAsset(asset, buff, length);
+        WriteAssetFromAssetDataSource(asset,length,obj);
         Objects::OnChangedAsset(asset);
         cmd_changed = true;
-
-        printf("ms: %u; %s; %u\n", millis(), buff, obj->cmd_pointer);
         return true;
     }
     return false;

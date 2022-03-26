@@ -126,6 +126,10 @@ inline void Objects::OnChangedAsset(u8 asset)
 			{
 				((ObjectText *)obj)->Draw();
 			}
+			else if (obj->type == ObjType_BLOB && ((ObjectBlob *)obj)->img_asset == asset)
+			{
+				((ObjectBlob *)obj)->Draw();
+			}
 		}
 	}
 }

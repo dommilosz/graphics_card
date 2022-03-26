@@ -1,18 +1,19 @@
+u8 last_asset_write_finished = 0;
+
 void CommandRoutine(data_source data_source)
 {
 	UTIL_DATA_SOURCE = data_source;
 	int cmd = GetU8();
+
 	if (cmd <= 0)
 		return;
-	sleep_ms(10);
-	//printf("cmdr:%u\n",cmd);
 
 	//INIT - resolution, tiles, board_size,
 	if (cmd == 1)
 	{
-		u8 resolution = GetU8();
-		u8 tiles = GetU8();
-		u32 board_size = GetU32();
+		u8 resolution = WaitForByte();
+		u8 tiles = WaitForByte();
+		u32 board_size = WaitForByte32();
 
 		vga.Init(resolution, tiles, board_size);
 
@@ -21,8 +22,8 @@ void CommandRoutine(data_source data_source)
 	//WRITE - (0-box, 1-add), offset, length, data......
 	else if (cmd == 2)
 	{
-		u32 offset = GetU32();
-		u32 length = GetU32();
+		u32 offset = WaitForByte32();
+		u32 length = WaitForByte32();
 
 		u8 *p = vga.box_ptr;
 
@@ -31,56 +32,57 @@ void CommandRoutine(data_source data_source)
 	//CLEAR - color
 	else if (cmd == 3)
 	{
-		u8 data = GetU8();
+		u8 data = WaitForByte();
 		Objects::Init();
 		vga.Clear(data);
+		Status(STATUS_OK);
 	}
 	//AUTO-INIT - resolution
 	else if (cmd == 4)
 	{
-		u8 resolution = GetU8();
+		u8 resolution = WaitForByte();
 		vga.AutoInit(resolution);
 		Status(STATUS_OK);
 	}
 	//Fill
 	else if (cmd == 5)
 	{
-		u8 location = GetU8();
-		u32 offset = GetU32();
-		u32 length = GetU32();
-		u8 data = GetU8();
+		u8 location = WaitForByte();
+		u32 offset = WaitForByte32();
+		u32 length = WaitForByte32();
+		u8 data = WaitForByte();
 		Status(vga.Fill(location, offset, length, data));
 	}
 	//Draw feature
 	else if (cmd == 6)
 	{
-		u8 feature_type = GetU8();
+		u8 feature_type = WaitForByte();
 		if (feature_type == 0)
 		{ //Rectangle
-			u16 x = GetU16();
-			u16 y = GetU16();
-			u16 w = GetU16();
-			u16 h = GetU16();
-			u8 col = GetU8();
+			u16 x = WaitForByte16();
+			u16 y = WaitForByte16();
+			u16 w = WaitForByte16();
+			u16 h = WaitForByte16();
+			u8 col = WaitForByte();
 			DrawRect(&Canvas, x, y, w, h, col);
 			Status(STATUS_OK);
 		}
 		else if (feature_type == 1)
 		{ //Point
-			u16 x = GetU16();
-			u16 y = GetU16();
-			u8 col = GetU8();
+			u16 x = WaitForByte16();
+			u16 y = WaitForByte16();
+			u8 col = WaitForByte();
 			DrawPoint(&Canvas, x, y, col);
 			Status(STATUS_OK);
 		}
 		else if (feature_type == (1 | 64))
 		{ //Points
-			u16 count = GetU16();
-			u8 col = GetU8();
+			u16 count = WaitForByte16();
+			u8 col = WaitForByte();
 			for (u16 i = 0; i < count; i++)
 			{
-				u16 x = GetU16();
-				u16 y = GetU16();
+				u16 x = WaitForByte16();
+				u16 y = WaitForByte16();
 				DrawPoint(&Canvas, x, y, col);
 			}
 
@@ -88,31 +90,31 @@ void CommandRoutine(data_source data_source)
 		}
 		else if (feature_type == 2)
 		{ //Line
-			u16 x1 = GetU16();
-			u16 y1 = GetU16();
-			u16 x2 = GetU16();
-			u16 y2 = GetU16();
-			u8 col = GetU8();
+			u16 x1 = WaitForByte16();
+			u16 y1 = WaitForByte16();
+			u16 x2 = WaitForByte16();
+			u16 y2 = WaitForByte16();
+			u8 col = WaitForByte();
 			DrawLine(&Canvas, x1, y1, x2, y2, col);
 			Status(STATUS_OK);
 		}
 		else if (feature_type == 3)
 		{ //Circle
-			u16 x1 = GetU16();
-			u16 y1 = GetU16();
-			u16 r = GetU16();
-			u8 col = GetU8();
-			u8 mask = GetU8();
+			u16 x1 = WaitForByte16();
+			u16 y1 = WaitForByte16();
+			u16 r = WaitForByte16();
+			u8 col = WaitForByte();
+			u8 mask = WaitForByte();
 			DrawCircle(&Canvas, x1, y1, r, col, mask);
 			Status(STATUS_OK);
 		}
 		else if (feature_type == (3 | 128))
 		{ //Circle fill
-			u16 x1 = GetU16();
-			u16 y1 = GetU16();
-			u16 r = GetU16();
-			u8 col = GetU8();
-			u8 mask = GetU8();
+			u16 x1 = WaitForByte16();
+			u16 y1 = WaitForByte16();
+			u16 r = WaitForByte16();
+			u8 col = WaitForByte();
+			u8 mask = WaitForByte();
 			DrawFillCircle(&Canvas, x1, y1, r, col, mask);
 			Status(STATUS_OK);
 		}
@@ -124,16 +126,16 @@ void CommandRoutine(data_source data_source)
 	//TEXT
 	else if (cmd == 7)
 	{
-		u8 type = GetU8();
+		u8 type = WaitForByte();
 		if (type == 0)
 		{ //Normal text 8x8 font
-			u16 x = GetU16();
-			u16 y = GetU16();
-			u8 color = GetU8();
-			u8 fh = GetU8();
-			u8 sx = GetU8();
-			u8 sy = GetU8();
-			u16 txt_length = GetU16();
+			u16 x = WaitForByte16();
+			u16 y = WaitForByte16();
+			u8 color = WaitForByte();
+			u8 fh = WaitForByte();
+			u8 sx = WaitForByte();
+			u8 sy = WaitForByte();
+			u16 txt_length = WaitForByte16();
 			u8 c[txt_length + 1];
 			ReadBuffer(c, txt_length);
 			c[txt_length] = 0;
@@ -142,14 +144,14 @@ void CommandRoutine(data_source data_source)
 		}
 		else if (type == (0 | 64))
 		{ //Normal text 8x8 font but with background
-			u16 x = GetU16();
-			u16 y = GetU16();
-			u8 color = GetU8();
-			u8 bgcolor = GetU8();
-			u8 fh = GetU8();
-			u8 sx = GetU8();
-			u8 sy = GetU8();
-			u16 txt_length = GetU16();
+			u16 x = WaitForByte16();
+			u16 y = WaitForByte16();
+			u8 color = WaitForByte();
+			u8 bgcolor = WaitForByte();
+			u8 fh = WaitForByte();
+			u8 sx = WaitForByte();
+			u8 sy = WaitForByte();
+			u16 txt_length = WaitForByte16();
 			u8 c[txt_length + 1];
 			ReadBuffer(c, txt_length);
 			c[txt_length] = 0;
@@ -158,11 +160,11 @@ void CommandRoutine(data_source data_source)
 		}
 		else if (type == 1)
 		{ //Cursored text 8x8 font
-			u8 color = GetU8();
-			u8 fh = GetU8();
-			u8 sx = GetU8();
-			u8 sy = GetU8();
-			u16 txt_length = GetU16();
+			u8 color = WaitForByte();
+			u8 fh = WaitForByte();
+			u8 sx = WaitForByte();
+			u8 sy = WaitForByte();
+			u16 txt_length = WaitForByte16();
 			u8 c[txt_length + 1];
 			ReadBuffer(c, txt_length);
 			c[txt_length] = 0;
@@ -172,12 +174,12 @@ void CommandRoutine(data_source data_source)
 		}
 		else if (type == (1 | 64))
 		{ //Cursored text 8x8 font background
-			u8 color = GetU8();
-			u8 bgcolor = GetU8();
-			u8 fh = GetU8();
-			u8 sx = GetU8();
-			u8 sy = GetU8();
-			u16 txt_length = GetU16();
+			u8 color = WaitForByte();
+			u8 bgcolor = WaitForByte();
+			u8 fh = WaitForByte();
+			u8 sx = WaitForByte();
+			u8 sy = WaitForByte();
+			u16 txt_length = WaitForByte16();
 			u8 c[txt_length + 1];
 			ReadBuffer(c, txt_length);
 			c[txt_length] = 0;
@@ -187,8 +189,8 @@ void CommandRoutine(data_source data_source)
 		}
 		else if (type == (128 | 0))
 		{ //Set cursor
-			u16 cX = GetU16();
-			u16 cY = GetU16();
+			u16 cX = WaitForByte16();
+			u16 cY = WaitForByte16();
 			vga.SetCursor(cX, cY);
 			Status(STATUS_OK);
 		}
@@ -201,31 +203,36 @@ void CommandRoutine(data_source data_source)
 	//Objects
 	else if (cmd == 8)
 	{
-		u8 index = GetU8();
-		u8 action = GetU8();
+		u8 index = WaitForByte();
+		u8 action = WaitForByte();
 
 		//CREATE:
 		if (action == 0)
 		{
-			u8 type = GetU8();
-			if (type == 1)
+			u8 type = WaitForByte();
+			if (type == ObjType_RECTANGLE)
 			{
 				Objects::Push(ObjType_RECTANGLE, index);
 				Status(STATUS_OK);
 			}
-			else if (type == 2)
+			else if (type == ObjType_TEXT)
 			{
 				Objects::Push(ObjType_TEXT, index);
 				Status(STATUS_OK);
 			}
-			else if (type == 3)
+			else if (type == ObjType_CIRCLE)
 			{
 				Objects::Push(ObjType_CIRCLE, index);
 				Status(STATUS_OK);
 			}
-			else if (type == 4)
+			else if (type == ObjType_LINE)
 			{
 				Objects::Push(ObjType_LINE, index);
+				Status(STATUS_OK);
+			}
+			else if (type == ObjType_BLOB)
+			{
+				Objects::Push(ObjType_BLOB, index);
 				Status(STATUS_OK);
 			}
 			else
@@ -242,9 +249,9 @@ void CommandRoutine(data_source data_source)
 		//MOVE:
 		else if (action == 2)
 		{
-			u8 relative = GetU8();
-			int16_t x = GetU16();
-			int16_t y = GetU16();
+			u8 relative = WaitForByte();
+			int16_t x = WaitForByte16();
+			int16_t y = WaitForByte16();
 			Object *obj = objects[index];
 			obj->Move(x, y, relative);
 			Status(STATUS_OK);
@@ -252,7 +259,7 @@ void CommandRoutine(data_source data_source)
 		//Change Color
 		else if (action == 3)
 		{
-			u8 color = GetU8();
+			u8 color = WaitForByte();
 			Object *obj = objects[index];
 			obj->ChangeColor(color);
 			Status(STATUS_OK);
@@ -260,7 +267,7 @@ void CommandRoutine(data_source data_source)
 		//Visibility
 		else if (action == 4)
 		{
-			u8 visibility = GetU8();
+			u8 visibility = WaitForByte();
 			Object *obj = objects[index];
 			obj->ChangeVisibility(visibility);
 			Status(STATUS_OK);
@@ -268,19 +275,18 @@ void CommandRoutine(data_source data_source)
 		//Resize [Asume Rectangle]
 		else if (action == 5)
 		{
-			u8 relative = GetU8();
-			int16_t w = GetU16();
-			int16_t h = GetU16();
-			ObjAssert(ObjType_RECTANGLE);
-			ObjectRect *obj = (ObjectRect *)objects[index];
+			u8 relative = WaitForByte();
+			int16_t w = WaitForByte16();
+			int16_t h = WaitForByte16();
+			Object *obj = objects[index];
 			obj->Resize(w, h, relative);
 			Status(STATUS_OK);
 		}
 		//Change Radius [Assume Circle]
 		else if (action == 6)
 		{
-			u8 relative = GetU8();
-			int16_t r = GetU16();
+			u8 relative = WaitForByte();
+			int16_t r = WaitForByte16();
 			ObjAssert(ObjType_CIRCLE);
 			ObjectCircle *obj = (ObjectCircle *)objects[index];
 			obj->SetRadius(r, relative);
@@ -289,8 +295,8 @@ void CommandRoutine(data_source data_source)
 		//Change Mask,Fill [Assume Circle]
 		else if (action == 7)
 		{
-			u8 mask = GetU8();
-			u8 fill = GetU8();
+			u8 mask = WaitForByte();
+			u8 fill = WaitForByte();
 			ObjAssert(ObjType_CIRCLE);
 			ObjectCircle *obj = (ObjectCircle *)objects[index];
 			obj->SetMask(mask);
@@ -300,11 +306,11 @@ void CommandRoutine(data_source data_source)
 		//Move line [Assume Line]
 		else if (action == 8)
 		{
-			u8 relative = GetU8();
-			int16_t x = GetU16();
-			int16_t y = GetU16();
-			int16_t x2 = GetU16();
-			int16_t y2 = GetU16();
+			u8 relative = WaitForByte();
+			int16_t x = WaitForByte16();
+			int16_t y = WaitForByte16();
+			int16_t x2 = WaitForByte16();
+			int16_t y2 = WaitForByte16();
 			ObjAssert(ObjType_LINE);
 			ObjectLine *obj = (ObjectLine *)objects[index];
 			obj->Move(x, y, x2, y2, relative);
@@ -315,16 +321,16 @@ void CommandRoutine(data_source data_source)
 		{
 			ObjAssert(ObjType_TEXT);
 			ObjectText *obj = (ObjectText *)objects[index];
-			u8 asset = GetU8();
+			u8 asset = WaitForByte();
 			obj->SetText(asset);
 			Status(STATUS_OK);
 		}
 		//Set text scale [Assume Text]
 		else if (action == 10)
 		{
-			u16 sX = GetU16();
-			u16 sY = GetU16();
-			u16 fH = GetU16();
+			u16 sX = WaitForByte16();
+			u16 sY = WaitForByte16();
+			u16 fH = WaitForByte16();
 			ObjAssert(ObjType_TEXT);
 			ObjectText *obj = (ObjectText *)objects[index];
 			obj->SetScale(sX, sY, fH);
@@ -334,15 +340,24 @@ void CommandRoutine(data_source data_source)
 		else if (action == 11)
 		{
 			Object *obj = (Object *)objects[index];
-			u8 code_asset = GetU8();
+			u8 code_asset = WaitForByte();
 			obj->SetCode(code_asset);
+			Status(STATUS_OK);
+		}
+		//Set blob asset [Assume blob]
+		else if (action == 12)
+		{
+			u8 code_asset = WaitForByte();
+			ObjAssert(ObjType_BLOB);
+			ObjectBlob *obj = (ObjectBlob *)objects[index];
+			obj->SetImage(code_asset);
 			Status(STATUS_OK);
 		}
 
 		//List All
 		else if (action == 255)
 		{
-			bool details = GetU8();
+			bool details = WaitForByte();
 			uint16_t length = 0;
 			for (u8 i = 0; i < OBJECTS_COUNT; i++)
 			{
@@ -386,8 +401,8 @@ void CommandRoutine(data_source data_source)
 	//PLAY SOUND
 	else if (cmd == 9)
 	{
-		u16 length = GetU16();
-		u8 repeat = GetU8();
+		u16 length = WaitForByte16();
+		u8 repeat = WaitForByte();
 		u8 c[length];
 		ReadBuffer(c, length);
 		PlaySound(c, length, repeat);
@@ -403,21 +418,58 @@ void CommandRoutine(data_source data_source)
 	//write asset
 	else if (cmd == 10)
 	{
-		u8 asset = GetU8();
-		u16 length = GetU16();
+		u8 asset = WaitForByte();
+		u16 length = WaitForByte16();
 		Objects::OnChangingAsset(asset);
 		WriteAssetFromDataSource(asset, length);
 		Objects::OnChangedAsset(asset);
+		I2CCom.lastPing = millis();
+		Status(STATUS_OK);
 	}
-	//redraw
+	//write asset parted
 	else if (cmd == 11)
 	{
+		u8 asset = WaitForByte();
+		u16 offset = WaitForByte16();
+		u16 length = WaitForByte16();
+		u8 segment_location = WaitForByte();
+		if (segment_location == 0 || segment_location == 254)
+		{
+			Objects::OnChangingAsset(asset);
+			last_asset_write_finished = 0;
+		}
+		WriteAssetFromDataSource(asset, length, offset);
+		if (segment_location == 255 || segment_location == 254)
+		{
+			Objects::OnChangedAsset(asset);
+			last_asset_write_finished = 1;
+		}
+		I2CCom.lastPing = millis();
+		Status(STATUS_OK);
+	}
+	//asset - checksum
+	else if (cmd == 12)
+	{
+		u8 asset = WaitForByte();
+		u16 length = WaitForByte16();
+		putu32(AssetCRC32(asset,length));
+		Status(STATUS_OK);
+	}
+	//redraw
+	else if (cmd == 13)
+	{
 		vga.Clear();
+	}
+	//Status:
+	else if (cmd == 253)
+	{
+		putu(vga.initialized);
+		putu(last_asset_write_finished);
+		Status(STATUS_OK);
 	}
 	//TEST cmd
 	else if (cmd == 254)
 	{
-
 	}
 	else if (cmd == 255)
 	{

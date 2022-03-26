@@ -18,6 +18,7 @@ public:
     u8 bgcolor;
     sCanvas TmpCanvas;
     bool double_buffer = false;
+    bool initialized = false;
 
     VGA()
     {
@@ -64,6 +65,8 @@ public:
         TmpCanvas.h = Canvas.h;
         TmpCanvas.wb = Canvas.wb;
         TmpCanvas.format = Canvas.format;
+
+        initialized = true;
     }
 
     void MergeCanvas()

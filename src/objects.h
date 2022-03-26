@@ -20,6 +20,10 @@
         {                                \
             ((ObjectLine *)obj)->x();    \
         }                                \
+        else if (type == ObjType_BLOB)   \
+        {                                \
+            ((ObjectBlob *)obj)->x();    \
+        }                                \
     }
 
 #define ObjectActionWR(x, obj)           \
@@ -40,6 +44,10 @@
         else if (type == ObjType_LINE)   \
         {                                \
             ((ObjectLine *)obj)->x();    \
+        }                                \
+        else if (type == ObjType_BLOB)   \
+        {                                \
+            ((ObjectBlob *)obj)->x();    \
         }                                \
     }
 
@@ -151,6 +159,22 @@ public:
         Objects::OnChange();
     }
 
+    void Resize(int16_t w, int16_t h, u8 relative)
+    {
+        clear();
+        if (relative == 0)
+        {
+            this->w = w;
+            this->h = h;
+        }
+        else
+        {
+            this->w += w;
+            this->h += h;
+        }
+        Objects::OnChange();
+    }
+
     void ChangeColor(u8 c)
     {
         this->color = c;
@@ -191,22 +215,6 @@ public:
 class ObjectRect : public Object
 {
 public:
-    void Resize(int16_t w, int16_t h, u8 relative)
-    {
-        clear();
-        if (relative == 0)
-        {
-            this->w = w;
-            this->h = h;
-        }
-        else
-        {
-            this->w += w;
-            this->h += h;
-        }
-        Objects::OnChange();
-    }
-
     void Draw()
     {
         DrawRect(&vga.TmpCanvas, x, y, w, h, color);
@@ -276,7 +284,8 @@ public:
                 i++;
                 continue;
             }
-            if(data[0] == 13){
+            if (data[0] == 13)
+            {
                 i++;
                 continue;
             }
@@ -412,5 +421,78 @@ public:
     size_t Size()
     {
         return sizeof(ObjectLine);
+    }
+};
+
+class ObjectBlob : public Object
+{
+public:
+    u8 img_asset;
+
+    void SetImage(u8 asset)
+    {
+        img_asset = asset;
+        Objects::OnChange();
+    }
+
+    void Draw()
+    {
+        if (img_asset == 0)
+            return;
+        u8 compressed = ReadAsset(img_asset, 0);
+
+        if (compressed == 0)
+        {
+            for (int _y = 0; _y < h; _y++)
+                for (int _x = 0; _x < w; _x++)
+                {
+                    u8 b = ReadAsset(img_asset, (w * _y) + _x);
+                    DrawPoint(&Canvas, _x + x, _y + y, b);
+                }
+        }
+        else
+        {
+            u8 tmp_color;
+            u16 tmp_nextx;
+            u16 tmp_nexty;
+            u32 asset_index = 1;
+
+            tmp_color = ReadAsset(img_asset, asset_index);
+            asset_index += 1;
+            tmp_nextx = Read2Asset(img_asset, asset_index);
+            asset_index += 2;
+            tmp_nexty = Read2Asset(img_asset, asset_index);
+            asset_index += 2;
+
+            for (int _y = 0; _y < h; _y++)
+                for (int _x = 0; _x < w; _x++)
+                {
+                    if (_x >= tmp_nextx && _y >= tmp_nexty)
+                    {
+                        tmp_color = ReadAsset(img_asset, asset_index);
+                        asset_index += 1;
+                        tmp_nextx = Read2Asset(img_asset, asset_index);
+                        asset_index += 2;
+                        tmp_nexty = Read2Asset(img_asset, asset_index);
+                        asset_index += 2;
+                    }
+
+                    DrawPoint(&Canvas, _x + x, _y + y, tmp_color);
+                }
+        }
+    }
+
+    void clear()
+    {
+        DrawRect(&Canvas, x, y, w, h, vga.bgcolor);
+    }
+
+    ~ObjectBlob() {}
+
+    void Free() { this->~ObjectBlob(); }
+
+    size_t Size()
+    {
+        return sizeof(ObjectBlob);
     }
 };
