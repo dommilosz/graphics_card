@@ -441,45 +441,127 @@ public:
             return;
         u8 compressed = ReadAsset(img_asset, 0);
 
-        if (compressed == 0)
-        {
-            for (int _y = 0; _y < h; _y++)
-                for (int _x = 0; _x < w; _x++)
+        bool rotated = false;
+            if (compressed >> 7 == 1)
+            {
+                compressed = compressed & 0x7F;
+                rotated = true;
+            }
+
+            if (compressed == 0)
+            {
+                for (int i = 0; i < w * h; i++)
                 {
-                    u8 b = ReadAsset(img_asset, (w * _y) + _x);
+                    int b = ReadAsset(img_asset,i+1);
+                    int _x = i / h;
+                    int _y = i % h;
+                    if (rotated)
+                    {
+                        _y = h - (i / w) - 1;
+                        _x = i % w;
+                    }
                     DrawPoint(&Canvas, _x + x, _y + y, b);
                 }
-        }
-        else
-        {
-            u8 tmp_color;
-            u16 tmp_nextx;
-            u16 tmp_nexty;
-            u32 asset_index = 1;
+            }
+            else if (compressed == 1)
+            {
+                int tmp_color;
+                int tmp_next;
+                int asset_index = 1;
 
-            tmp_color = ReadAsset(img_asset, asset_index);
-            asset_index += 1;
-            tmp_nextx = Read2Asset(img_asset, asset_index);
-            asset_index += 2;
-            tmp_nexty = Read2Asset(img_asset, asset_index);
-            asset_index += 2;
+                tmp_color = ReadAsset(img_asset,asset_index);
+                asset_index += 1;
+                tmp_next = Read3Asset(img_asset,asset_index);
+                asset_index += 3;
 
-            for (int _y = 0; _y < h; _y++)
-                for (int _x = 0; _x < w; _x++)
+                for (int i = 0; i < w * h; i++)
                 {
-                    if (_x >= tmp_nextx && _y >= tmp_nexty)
+                    if (i > tmp_next)
                     {
-                        tmp_color = ReadAsset(img_asset, asset_index);
+                        tmp_color = ReadAsset(img_asset,asset_index);
                         asset_index += 1;
-                        tmp_nextx = Read2Asset(img_asset, asset_index);
-                        asset_index += 2;
-                        tmp_nexty = Read2Asset(img_asset, asset_index);
-                        asset_index += 2;
+                        tmp_next = Read3Asset(img_asset,asset_index);
+                        asset_index += 3;
                     }
 
+                    int _x = i / h;
+                    int _y = i % h;
+                    if (rotated)
+                    {
+                        _y = h - (i / w) - 1;
+                        _x = i % w;
+                    }
                     DrawPoint(&Canvas, _x + x, _y + y, tmp_color);
                 }
-        }
+            }
+            else if (compressed == 2)
+            {
+                int tmp_color;
+                int tmp_next;
+                int asset_index = 1;
+
+                tmp_color = ReadAsset(img_asset,asset_index);
+                asset_index += 1;
+                tmp_next = Read2Asset(img_asset,asset_index);
+                asset_index += 2;
+
+                for (int i = 0; i < w * h; i++)
+                {
+                    if (i > tmp_next)
+                    {
+                        tmp_color = ReadAsset(img_asset,asset_index);
+                        asset_index += 1;
+                        tmp_next = Read2Asset(img_asset,asset_index);
+                        asset_index += 2;
+                    }
+                    int _x = i / h;
+                    int _y = i % h;
+                    if (rotated)
+                    {
+                        _y = h-(i / w)-1;
+                        _x = i % w;
+                    }
+                    DrawPoint(&Canvas, _x + x, _y + y, tmp_color);
+                }
+            }
+            else if (compressed == 3)
+            {
+                u32 tmp_color;
+                u32 tmp_next;
+                u32 asset_index = 1;
+
+                u32 colors_loc = Read3Asset(img_asset,asset_index);
+                asset_index += 3;
+
+                tmp_next = Read3Asset(img_asset,asset_index);
+                tmp_color = tmp_next >> 18;
+                tmp_next = tmp_next & 0x03FFFF;
+                asset_index += 3;
+                u32 length = w * h;
+
+                u8 read_color = 0;
+                read_color = ReadAsset(img_asset,colors_loc + tmp_color);
+                for (int i = 0; i < length; i++)
+                {
+                    if (i > tmp_next)
+                    {
+                        tmp_next = Read3Asset(img_asset,asset_index);
+                        tmp_color = tmp_next >> 18;
+                        tmp_next = tmp_next & 0x03FFFF;
+                        read_color = ReadAsset(img_asset,colors_loc + tmp_color);
+                        asset_index += 3;
+                    }
+
+                    int _x = i / h;
+                    int _y = i % h;
+                    if (rotated)
+                    {
+                        _y = h - (i / w) - 1;
+                        _x = i % w;
+                    }
+                    DrawPoint(&Canvas, _x + x, _y + y, read_color);
+                }
+            }
     }
 
     void clear()

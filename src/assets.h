@@ -138,6 +138,11 @@ u16 Read2Asset(u8 asset, u16 byte)
     return ((ReadAsset(asset, byte) << 8) | ReadAsset(asset, byte + 1));
 }
 
+u32 Read3Asset(u8 asset, u16 byte)
+{
+    return ((ReadAsset(asset, byte) << 16) | (ReadAsset(asset, byte+1) << 8) | ReadAsset(asset, byte + 2));
+}
+
 void GetSectors(u8 asset)
 {
     for (u16 i = 0; i < ALLOC_SECTORS; i++)

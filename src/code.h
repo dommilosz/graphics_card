@@ -15,7 +15,6 @@ u16 Next2Byte(Object *obj)
 
 void NextBuff(u16 length, u8 *buff, Object *obj)
 {
-    printf("buff: %u", length);
     for (u16 i = 0; i < length; i++)
     {
         buff[i] = NextByte(obj);
