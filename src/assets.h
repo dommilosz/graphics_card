@@ -170,3 +170,11 @@ uint32_t AssetCRC32(u8 asset, u16 length) {
 	
 	return ~crc;
 }
+
+uint32_t StrlenAsset(u8 asset){
+    uint32_t l = 0;
+    while(ReadAsset(asset, l) != 0){
+        l++;
+    }
+    return l;
+}

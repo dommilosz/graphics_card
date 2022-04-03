@@ -298,7 +298,36 @@ public:
 
     void clear()
     {
-        Draw(vga.bgcolor);
+        u16 dY = 0;
+        u16 dX = 0;
+        int i = 0;
+        while (true)
+        {
+            char data[2];
+            data[0] = ReadAsset(text_asset, i);
+            data[1] = 0;
+
+            if (data[0] == 0)
+            {
+                return;
+            }
+            if (data[0] == 10)
+            {
+                dY += sY * fH;
+                dX = 0;
+                i++;
+                continue;
+            }
+            if (data[0] == 13)
+            {
+                i++;
+                continue;
+            }
+
+            DrawRect(&Canvas, x + dX, y + dY, 8*sX, 8*sY, vga.bgcolor);
+            dX += sX * 8;
+            i++;
+        }
     }
 
     ~ObjectText()
