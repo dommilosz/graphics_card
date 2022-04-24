@@ -65,12 +65,9 @@ int main()
 	Objects::Init();
 	vga.Allocate();
 	draw_no_signal();
-
-	gpio_init(LED_PIN);
-	gpio_set_dir(LED_PIN, GPIO_OUT);
-
 	rnd.InitSeed();
 
+	pinMode(13, OUTPUT);
 	pinMode(26, INPUT_PULLUP);
 	pinMode(27, INPUT_PULLUP);
 	I2CCom.begin();
@@ -80,7 +77,7 @@ int main()
 	while (true)
 	{
 		u8 ready = I2CCom.ready();
-		digitalWrite(LED_PIN, ready == 0);
+		digitalWrite(13, ready==0);
 		CommandRoutine(data_source_serial);
 		Objects::ExecCode();
 	}

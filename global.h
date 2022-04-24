@@ -48,7 +48,7 @@ typedef unsigned char Bool;
 // align array to 4-bytes
 #define ALIGNED __attribute__((aligned(4)))
 
-#define LED_PIN 25
+#define LED_PIN 13
 
 // ----------------------------------------------------------------------------
 //                               Constants
