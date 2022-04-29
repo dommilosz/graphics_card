@@ -8,6 +8,10 @@
 
 #include "include.h"
 
+#ifndef DISABLE_SND
+
+#include "pwmsnd.h"
+
 // current sound
 const u8* CurSound = NULL; // current playing sound
 volatile int SoundCnt = 0; // counter of current playing sound (<=0 no sound)
@@ -161,3 +165,4 @@ void SetNextSound(const u8* snd, int len)
 	__dmb();
 	NextSoundCnt = len;
 }
+#endif

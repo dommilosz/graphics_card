@@ -8,6 +8,7 @@ cRandom rnd;
 #include "assets.h"
 #include "objects.h"
 #include "objects.cpp"
+#include "sound.h"
 
 #include "commands.h"
 
@@ -73,6 +74,8 @@ int main()
 	I2CCom.begin();
 	I2CCom._wire->onReceive(receiveEvent);
 	I2CCom._wire->onRequest(requestEvent);
+
+	PWMSndInit();
 
 	while (true)
 	{

@@ -1,5 +1,4 @@
 u8 last_asset_write_finished = 0;
-
 void CommandRoutine(data_source data_source)
 {
 	UTIL_DATA_SOURCE = data_source;
@@ -401,11 +400,18 @@ void CommandRoutine(data_source data_source)
 	//PLAY SOUND
 	else if (cmd == 9)
 	{
-		u16 length = WaitForByte16();
+		u16 freq = WaitForByte16();
+		u16 duration = WaitForByte16();
+		u8 type = WaitForByte();
+		PlaySoundFreq(freq, duration, type);
+		Status(STATUS_OK);
+	}
+	//PLAY SOUND (From asset)
+	else if (cmd == (9|64))
+	{
+		u8 asset = WaitForByte();
 		u8 repeat = WaitForByte();
-		u8 c[length];
-		ReadBuffer(c, length);
-		PlaySound(c, length, repeat);
+		PlaySoundAsset(asset,repeat);
 		Status(STATUS_OK);
 	}
 	//STOP Sound

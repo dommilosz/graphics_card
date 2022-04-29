@@ -234,7 +234,6 @@ extern const ALIGNED u8 FontThin8x8[2048];
 #include "libraries/_picovga/util/print.h" // print to attribute text buffer
 #include "libraries/_picovga/util/rand.h"	// random number generator
 #include "libraries/_picovga/util/mat2d.h" // 2D transformation matrix
-#include "libraries/_picovga/util/pwmsnd.h" // PWM sound output
 #include "libraries/_picovga/vga_pal.h"	// VGA colors and palettes
 #include "libraries/_picovga/vga_vmode.h"	// VGA videomodes
 #include "libraries/_picovga/vga_layer.h"	// VGA layers
