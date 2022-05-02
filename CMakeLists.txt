@@ -13,9 +13,12 @@ add_executable(vga_graphics_card
     src/main.cpp
 )
 
+add_compile_definitions(EASY_REFLASH_NO_PAUSE EASY_REFLASH_DISABLE_BOOTLOADER_RESET)
+
 include_directories(./src/)
 include_directories(./libraries/I2CCom/)
 include_directories(./libraries/Wire/src/)
+include_directories(./libraries/PicoEasyReflash)
 include_directories(./arduino-pico/cores/rp2040/)
 include_directories(./arduino-pico/variants/rpipico/)
 

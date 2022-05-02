@@ -10,3 +10,6 @@
 [submodule "misc/customasm"]
 	path = misc/customasm
 	url = https://github.com/dommilosz/customasm/
+[submodule "libraries/PicoEasyReflash"]
+	path = libraries/PicoEasyReflash
+	url = https://github.com/dommilosz/PicoEasyReflash

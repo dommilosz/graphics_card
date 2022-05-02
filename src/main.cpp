@@ -9,8 +9,8 @@ cRandom rnd;
 #include "objects.h"
 #include "objects.cpp"
 #include "sound.h"
-
 #include "commands.h"
+#include "PicoEasyReflash.h"
 
 void draw_no_signal()
 {
@@ -34,10 +34,12 @@ void receiveEvent(int len)
 		{
 			cmd_buff_iw = 0;
 			cmd_buff_ir = 0;
-			while(Wire1.available()>0){
+			while (Wire1.available() > 0)
+			{
 				cmd_buff[cmd_buff_iw] = Wire1.read();
 				cmd_buff_iw++;
-				if(cmd_buff_iw>=16)break;
+				if (cmd_buff_iw >= 16)
+					break;
 			}
 		}
 	}
@@ -68,7 +70,7 @@ int main()
 	draw_no_signal();
 	rnd.InitSeed();
 
-	pinMode(13, OUTPUT);
+	pinMode(LED_BUILTIN, OUTPUT);
 	pinMode(26, INPUT_PULLUP);
 	pinMode(27, INPUT_PULLUP);
 	I2CCom.begin();
@@ -77,10 +79,30 @@ int main()
 
 	PWMSndInit();
 
+	digitalWrite(LED_BUILTIN, HIGH);
+	delay(100);
+	digitalWrite(LED_BUILTIN, LOW);
+	delay(100);
+	digitalWrite(LED_BUILTIN, HIGH);
+	delay(100);
+	digitalWrite(LED_BUILTIN, LOW);
+	delay(100);
+
+	watchdog_enable(3000, 1);
 	while (true)
 	{
+		watchdog_update();
 		u8 ready = I2CCom.ready();
-		digitalWrite(13, ready==0);
+		u16 leddata = millis() % 1000;
+		if (ready == 0)
+		{
+			digitalWrite(LED_BUILTIN, leddata > 100);
+		}
+		else
+		{
+			digitalWrite(LED_BUILTIN, leddata > 700);
+		}
+		TickEasyReflash();
 		CommandRoutine(data_source_serial);
 		Objects::ExecCode();
 	}
