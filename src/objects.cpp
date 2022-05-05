@@ -56,19 +56,22 @@ inline void Objects::Push(u8 type, u8 index)
 #include "code.h"
 inline void Object::ExecCommands()
 {
-	if (!time_reached(cmd_delay_to))
+	if (code_core.asset == 0)
 		return;
 
-	if (cmd_asset == 0)
-		return;
-
-	if (ReadAsset(cmd_asset, cmd_pointer) == 0)
+	u8 own_time = code_core.own_time();
+	if(own_time<1) own_time = 1;
+	
+	for (int i = 0; i < own_time; i++)
 	{
-		cmd_pointer = 0;
-		return;
+		if (!time_reached(code_core.delay_to))
+			break;
+		if (!ExecuteCommand(this))
+		{
+			code_core.jmp(0);
+			break;
+		}
 	}
-
-	ExecuteCommand(this);
 }
 
 inline void Objects::ExecCode()
@@ -91,6 +94,10 @@ inline void Object::clear()
 {
 	ObjectActionWR(clear, this);
 }
+inline void Object::Draw()
+{
+	ObjectActionWR(Draw, this);
+}
 
 inline void Objects::OnChangingAsset(u8 asset)
 {
@@ -99,7 +106,7 @@ inline void Objects::OnChangingAsset(u8 asset)
 		if (objects[i] != 0)
 		{
 			Object *obj = objects[i];
-			if (obj->cmd_asset == asset)
+			if (obj->code_core.asset == asset)
 			{
 				//NOTHING TO DO (CODE WILL BE RESET IN OnChangedAsset, code execution is not async)
 			}
@@ -118,7 +125,7 @@ inline void Objects::OnChangedAsset(u8 asset)
 		if (objects[i] != 0)
 		{
 			Object *obj = objects[i];
-			if (obj->cmd_asset == asset)
+			if (obj->code_core.asset == asset)
 			{
 				obj->SetCode(asset);
 			}

@@ -1,4 +1,7 @@
-#ruledef property{
+#fn str(v) => v @ 0`8
+#fn byte_len(v) => (len(v)/8)
+
+#ruledef property_single{
 	x => 0x00
 	y => 0x01
 	w => 0x02
@@ -6,93 +9,149 @@
 	color => 0x04
 	visibility => 0x05
 	type => 0x06
-	cmd_asset => 0x07
-	txt_asset => 0x08
-	screen_w => 0xD0
-	screen_h => 0xD1
-	screen_bg => 0xD2
-	millis => 0xD3
-	micros => 0xD4
-	draw_color => 0xF0
-	draw_x => 0xF1
-	draw_y => 0xF2
-	draw_x2 => 0xF3
-	draw_y2 => 0xF4
+	code_asset => 0x07
+	text_asset => 0x08
+	screen_w => 0xA0
+	screen_h => 0xA1
+	screen_bg => 0xA2
+	millis => 0xA3
+	micros => 0xA4
+	
+	mem[{index:u8}] => {
+		assert(index < 31)
+		(0xD0 + index)`8
+	}
+	A => (0xD0 + 0)`8
+	B => (0xD0 + 1)`8
+	C => (0xD0 + 2)`8
+	D => (0xD0 + 3)`8
+	own_time => (0xD0+25)`8
+	PC => (0xD0 + 26)`8
+	SP => (0xD0 + 27)`8
+}
+
+#ruledef property_number{
+	{number:u8} => {0xFF @ number}
+	{number:u16} => {0xFE @ number}
+}
+
+#ruledef property{
+	{prop:property_single}=> prop
+	{number:property_number} => number
+}
+
+#ruledef bool
+{
+	true => 0x01
+	false => 0x00
+	{v:u8}=>{
+		assert(v==1)
+		0x01
+	}
+	{v:u8}=>{
+		assert(v==0)
+		0x00
+	}
+}
+
+#ruledef asset
+{
+	assets[{asset:property}] => 
+	{
+		assert(asset > 0);
+		asset @ 0xFF @0`8
+	}
+	assets[{asset:property}][{offset:property}] => 
+	{
+		assert(asset > 0);
+		asset @ offset
+	}
+	
 }
 
 #ruledef address{
 	{addr} => addr`16
 }
 
+#ruledef aligned_data{
+	{data} => {
+		assert((len(data) % 8) == 0)
+		data
+	}
+	{data} => {
+		assert((len(data) % 8) == 4)
+		data @ 0`4
+	}
+}
+
 #ruledef string{
-	{string} => ((len(string)/8)+1)`16 @ string  @ 0x00
+	{string:aligned_data} => {
+		assert(string[8:0] != 0)
+		0xFE @ (byte_len(string)+1)`16 @ string  @ 0x00
+	}
+	{string:aligned_data} => {
+		assert(string[8:0] == 0)
+		0xFE @ byte_len(string)`16 @ string
+	}
+	n0{string:aligned_data}=>0xFE @ byte_len(string)`16 @ string
 }
 
 #ruledef
 {
-    jmp {value:address} => 0xF0 @ value
-	jeq {value:address} => 0xF1 @ value
-	jnq {value:address} => 0xF2 @ value
-	jgt {value:address} => 0xF3 @ value
-	jge {value:address} => 0xF4 @ value
-	jls {value:address} => 0xF5 @ value
-	jle {value:address} => 0xF6 @ value
+    jmp {value:property} => 0xF0 @ value
+	jeq {value:property}, {prop1:property}, {prop2:property} => 0xF1 @ value @ prop1 @ prop2
+	jnq {value:property}, {prop1:property}, {prop2:property} => 0xF2 @ value @ prop1 @ prop2
+	jgt {value:property}, {prop1:property}, {prop2:property} => 0xF3 @ value @ prop1 @ prop2
+	jge {value:property}, {prop1:property}, {prop2:property} => 0xF4 @ value @ prop1 @ prop2
+	jls {value:property}, {prop1:property}, {prop2:property} => 0xF5 @ value @ prop1 @ prop2
+	jle {value:property}, {prop1:property}, {prop2:property} => 0xF6 @ value @ prop1 @ prop2
 	
-	load A, {value:u16} => 0xE0 @ value`16
-	load B, {value:u16} => 0xE1 @ value`16
+	call {address:property}=>0xF7 @ address
+	ret => 0xF8
 	
-	load A, {value:u8} => 0xE6 @ value`8
-	load B, {value:u8} => 0xE7 @ value`8
+	load {prop:property_single}, {value:property} => 0xE0 @ prop @ value
+	asset_load {asset:property}, {offset:property}, {refresh:bool}, {string:string} => 0xA0 @ asset @ offset @ refresh @ string 
+	asset_load {asset:property}, {offset:property}, {prop:property_single} => 0xA1 @ asset @ offset @ prop 
+	asset_load16 {asset:property}, {offset:property}, {prop:property_single} => 0xA2 @ asset @ offset @ prop 
+	asset_load {asset:property}, {offset:property}, {refresh:bool}, {data:property} => 0xA3 @ asset @ offset @ refresh @ data 
+	asset_load16 {asset:property}, {offset:property}, {refresh:bool}, {data:property} => 0xA4 @ asset @ offset @ refresh @ data 
 	
-	load A, {prop:property} => 0xE2 @ prop
-	load B, {prop:property} => 0xE3 @ prop
-
-	load {prop:property}, A => 0xE4 @ prop
-	load {prop:property}, B => 0xE5 @ prop
+	load {asset:asset}, {refresh:bool}, {string:string} => 0xA0 @ asset @ refresh @ string 
+	load {prop:property_single}, {asset:asset} => 0xA1 @ asset @ prop 
+	load16 {prop:property_single}, {asset:asset} => 0xA2 @ asset @ prop 
+	load {asset:asset}, {refresh:bool}, {data:property} => 0xA3 @ asset @ refresh @ data 
+	load16 {asset:asset}, {refresh:bool}, {data:property} => 0xA4 @ asset @ refresh @ data
 	
-	load A, B => 0xE8
-	load B, A => 0xE9
-	swp => 0xEA
-
-	load {prop:property}, {value:u16} => 0xEB @ prop @ value
-	load {prop:property}, {value:u8} => 0xEC @ prop @ value
+	load {asset:asset}, {string:string} => 0xA0 @ asset @ 0`8 @ string 
+	load {asset:asset}, {data:property} => 0xA3 @ asset @ 0`8 @ data 
+	load16 {asset:asset}, {data:property} => 0xA4 @ asset @ 0`8 @ data
 	
-	sleep {delay:u16} => 0xFF @ delay`16
-	sleep {delay:u8} => 0xFC @ delay`8
-	sleep A => 0xFD 
-	sleep B => 0xFE 
+	swp => 0xE1
+	swp {prop1:property_single}, {prop2:property_single} => 0xE2 @ prop1 @ prop2
 	
-	add => 0xD0
-	sub => 0xD1
-	mul => 0xD2
-	div => 0xD3
-	mod => 0xD4
+	sleep {delay:property} => 0xFF @ delay
 	
-	inc {value:u16} => 0xD5 @ value`16
-	dec {value:u16} => 0xD6 @ value`16
+	add {prop:property_single}, {value1:property}, {value2:property} => 0xD0 @ prop @ value1 @ value2
+	sub {prop:property_single}, {value1:property}, {value2:property} => 0xD1 @ prop @ value1 @ value2
+	mul {prop:property_single}, {value1:property}, {value2:property} => 0xD2 @ prop @ value1 @ value2
+	div {prop:property_single}, {value1:property}, {value2:property} => 0xD3 @ prop @ value1 @ value2
+	mod {prop:property_single}, {value1:property}, {value2:property} => 0xD4 @ prop @ value1 @ value2
 	
-	inc {value:u8} => 0xD9 @ value`8
-	dec {value:u8} => 0xDA @ value`8
+	inc {prop:property_single}, {value:property} => 0xD5 @ prop @ value
+	dec {prop:property_single}, {value:property} => 0xD6 @ prop @ value
 	
-	inc {prop:property}, {value:u16} => 0xD7 @ prop @ value`16
-	dec {prop:property}, {value:u16} => 0xD8 @ prop @ value`16
+	rnd {prop:property_single} => prop @ 0xC000
+	rnd {prop:property_single}, {max:property}=> 0xC001 @ prop @ max
+	rnd {prop:property_single}, {min:property}, {max:property} => 0xC002 @ prop @ min @ max
 	
-	inc {prop:property}, {value:u8} => 0xDB @ prop @ value`8
-	dec {prop:property}, {value:u8} => 0xDC @ prop @ value`8
-	
-	rnd => 0xC0
-	rnd {value:u16} => 0xC1 @ value
-	rnd {value:u8} => 0xC2 @ value
-	
-	rnd {min:u16}, {max:u16} => 0xC3 @ min @ max
-	rnd {min:u8}, {max:u8} => 0xC4 @ min @ max
-	
-	rnd B => 0xC5
-	rnd A, B => 0xC6
+	push {prop:property} => 0xE3 @ prop
+	pop {prop:property} => 0xE4 @ prop
 	
 	debug => 0x10
-
 	hang => 0x11
+	
+	clear_obj => 0xC100
+	draw_obj => 0xC101
 }
 
 #ruledef
@@ -112,7 +171,7 @@
 	read => 0xB5	
 }
 
-#ruledef 
+#ruledef
 {
-	write_asset {asset}, {str:string} => 0xA0 @ asset`8 @ str
+	debug {v:property} => 0xC102 @ v
 }

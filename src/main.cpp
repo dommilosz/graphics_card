@@ -71,6 +71,7 @@ int main()
 	rnd.InitSeed();
 
 	pinMode(LED_BUILTIN, OUTPUT);
+	pinMode(13, OUTPUT);
 	pinMode(26, INPUT_PULLUP);
 	pinMode(27, INPUT_PULLUP);
 	I2CCom.begin();
@@ -91,19 +92,24 @@ int main()
 	watchdog_enable(3000, 1);
 	while (true)
 	{
+		long start = micros();
 		watchdog_update();
 		u8 ready = I2CCom.ready();
 		u16 leddata = millis() % 1000;
 		if (ready == 0)
 		{
 			digitalWrite(LED_BUILTIN, leddata > 100);
+			digitalWrite(13, true);
 		}
 		else
 		{
 			digitalWrite(LED_BUILTIN, leddata > 700);
+			digitalWrite(13, false);
 		}
-		TickEasyReflash();
+		//TickEasyReflash();
 		CommandRoutine(data_source_serial);
 		Objects::ExecCode();
+		long end = micros();
+		//printf("loop: %u",end-start);
 	}
 }

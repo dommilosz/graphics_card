@@ -1,5 +1,5 @@
 #define OBJECTS_COUNT 32
-#define OBJECT_SIZE 64
+#define OBJECT_SIZE sizeof(ObjectText)
 
 #define ALLOC_SECTORS 255
 #define SECTOR_SIZE 96

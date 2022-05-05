@@ -38,6 +38,40 @@ u8 WriteAsset(u8 asset, u8 *data, u16 length)
     return 0;
 }
 
+u8 WriteAsset(u8 asset, u8 *data, u16 length, u16 offset)
+{
+    if (asset < 1)
+        return 0;
+    u16 wi = 0;
+    for (u16 i = 0; i < ALLOC_SECTORS; i++)
+    {
+        if (alloc_table[i] == 0 || alloc_table[i] == asset)
+        {
+            if (alloc_table[i] == 0)
+            {
+                memset(alloc_memory + (i * SECTOR_SIZE), 0x00, SECTOR_SIZE);
+            }
+            alloc_table[i] = asset;
+            for (u8 w = 0; w < SECTOR_SIZE; w++)
+            {
+                if (offset > 0)
+                {
+                    offset--;
+                    continue;
+                }
+                if (wi >= length)
+                    return 1;
+                alloc_memory[(i * SECTOR_SIZE) + w] = data[wi];
+                wi++;
+                if (wi >= length)
+                    return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+
 u8 WriteAssetFromDataSource(u8 asset, u16 length)
 {
     if (asset < 1)

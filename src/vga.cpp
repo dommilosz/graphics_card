@@ -78,6 +78,15 @@ public:
         memcpy(Canvas.img, TmpCanvas.img, box_len);
     }
 
+    void ClearDouble()
+    {
+        if (!double_buffer)
+        {
+            return;
+        }
+        memset(TmpCanvas.img, bgcolor, box_len);
+    }
+
     u8 Fill(u8 mode, u32 offset, u32 length, u8 data)
     {
         u8 location = mode & 0x0F;
