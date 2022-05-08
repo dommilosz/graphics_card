@@ -1,5 +1,8 @@
 #fn str(v) => v @ 0`8
 #fn byte_len(v) => (len(v)/8)
+#fn strcolor(v) => 22`8 @ v
+#fn strcolorreset() => 23`8
+#fn rgb(r,g,b)=> ((r*8/256)`3 @ (g*8/256)`3 @ (b*4/256)`2)`8
 
 #ruledef property_single{
 	x => 0x00
@@ -86,14 +89,9 @@
 
 #ruledef string{
 	{string:aligned_data} => {
-		assert(string[8:0] != 0)
-		0xFE @ (byte_len(string)+1)`16 @ string  @ 0x00
-	}
-	{string:aligned_data} => {
-		assert(string[8:0] == 0)
 		0xFE @ byte_len(string)`16 @ string
 	}
-	n0{string:aligned_data}=>0xFE @ byte_len(string)`16 @ string
+	0{string:aligned_data}=>0xFE @ byte_len(string)`16 @ 0`8
 }
 
 #ruledef
@@ -125,6 +123,9 @@
 	load {asset:asset}, {string:string} => 0xA0 @ asset @ 0`8 @ string 
 	load {asset:asset}, {data:property} => 0xA3 @ asset @ 0`8 @ data 
 	load16 {asset:asset}, {data:property} => 0xA4 @ asset @ 0`8 @ data
+	
+	loaditos {asset:asset}, {refresh:bool}, {number:property} => 0xA5 @ asset @ refresh @ number 
+	loaditos {asset:asset}, {number:property} => 0xA5 @ asset @ 0`8 @ number 
 	
 	swp => 0xE1
 	swp {prop1:property_single}, {prop2:property_single} => 0xE2 @ prop1 @ prop2

@@ -251,6 +251,7 @@ void CommandRoutine(data_source data_source)
 			u8 relative = WaitForByte();
 			int16_t x = WaitForByte16();
 			int16_t y = WaitForByte16();
+			ObjAssertExist();
 			Object *obj = objects[index];
 			obj->Move(x, y, relative);
 			Status(STATUS_OK);
@@ -259,6 +260,7 @@ void CommandRoutine(data_source data_source)
 		else if (action == 3)
 		{
 			u8 color = WaitForByte();
+			ObjAssertExist();
 			Object *obj = objects[index];
 			obj->ChangeColor(color);
 			Status(STATUS_OK);
@@ -267,6 +269,7 @@ void CommandRoutine(data_source data_source)
 		else if (action == 4)
 		{
 			u8 visibility = WaitForByte();
+			ObjAssertExist();
 			Object *obj = objects[index];
 			obj->ChangeVisibility(visibility);
 			Status(STATUS_OK);
@@ -277,6 +280,7 @@ void CommandRoutine(data_source data_source)
 			u8 relative = WaitForByte();
 			int16_t w = WaitForByte16();
 			int16_t h = WaitForByte16();
+			ObjAssertExist();
 			Object *obj = objects[index];
 			obj->Resize(w, h, relative);
 			Status(STATUS_OK);
@@ -340,6 +344,7 @@ void CommandRoutine(data_source data_source)
 		{
 			Object *obj = (Object *)objects[index];
 			u8 code_asset = WaitForByte();
+			ObjAssertExist();
 			obj->SetCode(code_asset);
 			Status(STATUS_OK);
 		}
@@ -352,45 +357,90 @@ void CommandRoutine(data_source data_source)
 			obj->SetImage(code_asset);
 			Status(STATUS_OK);
 		}
+		//read code register
+		else if (action == 252)
+		{
+			u8 reg = WaitForByte();
 
+			if (reg > 31)
+			{
+				Status(STATUS_ILLEGAL_VALUE);
+			}
+
+			ObjAssertExist();
+			Object *obj = (Object *)objects[index];
+			putu16(obj->code_core.mem[reg]);
+			Status(STATUS_OK);
+		}
+		//Wrtie to code register
+		else if (action == 253)
+		{
+			u8 reg = WaitForByte();
+			u8 value = WaitForByte16();
+
+			if (reg > 31)
+			{
+				Status(STATUS_ILLEGAL_VALUE);
+			}
+
+			ObjAssertExist();
+			Object *obj = (Object *)objects[index];
+			obj->code_core.mem[reg] = value;
+			Status(STATUS_OK);
+		}
+		//Object info
+		else if (action == 254)
+		{
+			Object *obj = (Object *)objects[index];
+			uint8_t type;
+			uint16_t x, y, w, h;
+			uint8_t color;
+			uint8_t visibility;
+			uint8_t code_asset, text_asset;
+			uint16_t code_pc;
+			if (obj != 0)
+			{
+				type = obj->type;
+				x = obj->x;
+				y = obj->y;
+				w = obj->w;
+				h = obj->h;
+				color = obj->color;
+				visibility = obj->visibility;
+				code_asset = obj->code_core.asset;
+				if (obj->type == ObjType_TEXT)
+				{
+					text_asset = ((ObjectText *)obj)->text_asset;
+				}
+				code_pc = obj->code_core.PC();
+			}
+			putu(type);
+			putu16(x);
+			putu16(y);
+			putu16(w);
+			putu16(h);
+			putu(color);
+			putu(visibility);
+
+			putu(code_asset);
+			putu(text_asset);
+			putu16(code_pc);
+
+			if(obj == 0){
+				Status(STATUS_ILLEGAL_OBJECT);
+			}
+
+			Status(STATUS_OK);
+		}
 		//List All
 		else if (action == 255)
 		{
-			bool details = WaitForByte();
-			uint16_t length = 0;
-			for (u8 i = 0; i < OBJECTS_COUNT; i++)
-			{
-				if (objects[i] != 0)
-				{
-					length += 1;
-					length += 1;
-					if (details)
-					{
-						length += 2; //x
-						length += 2; //y
-						length += 1; //visible
-						length += 1; //color
-					}
-					length += 1;
-				}
-			}
-			putu16(length);
 			for (u8 i = 0; i < OBJECTS_COUNT; i++)
 			{
 				if (objects[i] != 0)
 				{
 					putu(i);
 					putu(objects[i]->type);
-					if (details)
-					{
-						u16 x = objects[i]->x;
-						u16 y = objects[i]->y;
-						putu16(x);
-						putu16(y);
-						putu(objects[i]->visibility);
-						putu(objects[i]->color);
-					}
-					putu(0);
 				}
 			}
 			Status(STATUS_OK);
@@ -407,11 +457,11 @@ void CommandRoutine(data_source data_source)
 		Status(STATUS_OK);
 	}
 	//PLAY SOUND (From asset)
-	else if (cmd == (9|64))
+	else if (cmd == (9 | 64))
 	{
 		u8 asset = WaitForByte();
 		u8 repeat = WaitForByte();
-		PlaySoundAsset(asset,repeat);
+		PlaySoundAsset(asset, repeat);
 		Status(STATUS_OK);
 	}
 	//STOP Sound
@@ -458,7 +508,7 @@ void CommandRoutine(data_source data_source)
 	{
 		u8 asset = WaitForByte();
 		u16 length = WaitForByte16();
-		putu32(AssetCRC32(asset,length));
+		putu32(AssetCRC32(asset, length));
 		Status(STATUS_OK);
 	}
 	//redraw

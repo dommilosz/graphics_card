@@ -59,6 +59,15 @@
         return;                    \
     }
 
+#define ObjAssertExist()               \
+    Object *_obj = objects[index];     \
+    if (_obj == 0)                     \
+    {                                  \
+        Status(STATUS_ILLEGAL_OBJECT); \
+        return;                        \
+    }
+
+
 class Object;
 class ObjectRect;
 class ObjectCircle;
@@ -334,11 +343,12 @@ public:
         Draw(color);
     }
 
-    void Draw(u8 color)
+    void Draw(u8 _color)
     {
         u16 dY = 0;
         u16 dX = 0;
         int i = 0;
+        u8 color = _color;
         while (true)
         {
             char data[2];
@@ -358,6 +368,16 @@ public:
             }
             if (data[0] == 13)
             {
+                i++;
+                continue;
+            }
+            if(data[0] == 22){
+                color = ReadAsset(text_asset, i+1);
+                i+=2;
+                continue;
+            }
+            if(data[0] == 23){
+                color = _color;
                 i++;
                 continue;
             }

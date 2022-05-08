@@ -90,7 +90,7 @@ u8 cmd_changed = 0;
 
 void SkipByte(Object *obj)
 {
-    obj->code_core.PC(obj->code_core.PC()+ 1);
+    obj->code_core.PC(obj->code_core.PC() + 1);
 }
 
 u8 PeekByte(Object *obj)
@@ -141,7 +141,7 @@ u16 GetProperty(u8 prop, Object *obj)
 
     if (prop >= 0xD0 && prop <= 0xEF)
     {
-        return obj->code_core.readMem(prop-0xD0);
+        return obj->code_core.readMem(prop - 0xD0);
     }
 
     if (prop == 0xFE)
@@ -186,7 +186,7 @@ void SetProperty(u8 prop, u16 value, Object *obj)
     }
     if (prop >= 0xD0 && prop <= 0xEF)
     {
-        obj->code_core.setMem(prop-0xD0,value);
+        obj->code_core.setMem(prop - 0xD0, value);
     }
 }
 
@@ -271,7 +271,7 @@ bool HandleJumps(u8 instr, Object *obj)
     }
     if (instr == 0xF7) //push_jmp
     {
-        CODE_ADDRESS_TYPE addr = NextProperty(obj); 
+        CODE_ADDRESS_TYPE addr = NextProperty(obj);
         obj->code_core.push(obj->code_core.PC());
         obj->code_core.jmp(addr);
         return true;
@@ -401,9 +401,9 @@ bool HandleMisc(u8 _instr, Object *obj)
             cmd_changed = 1;
             return true;
         }
-        if(instr == 0x02) //debug print
+        if (instr == 0x02) //debug print
         {
-            printf("code @ %u: %u\n",obj->code_core.PC(),NextProperty(obj));
+            printf("code @ %u: %u\n", obj->code_core.PC(), NextProperty(obj));
             return true;
         }
     }
@@ -526,6 +526,24 @@ bool HandleAssets(u8 instr, Object *obj)
         }
         return true;
     }
+    if (instr == 0xA5)
+    { //int_to_str
+        u8 asset = NextProperty(obj);
+        u16 offset = NextProperty(obj);
+        u8 refresh = NextByte(obj);
+        u16 number = NextProperty(obj);
+        char num_char[8];
+        sprintf(num_char, "%d", number);
+        if (refresh)
+            Objects::OnChangingAsset(asset);
+        WriteAsset(asset, (u8*)num_char, 8, offset);
+        if (refresh)
+        {
+            Objects::OnChangedAsset(asset);
+            cmd_changed = 1;
+        }
+        return true;
+    }
     return false;
 }
 
@@ -536,7 +554,7 @@ bool ExecuteCommand(Object *obj)
 
     if (instr == 0x10)
     {
-        
+
         return true;
     }
     if (instr == 0x11)
