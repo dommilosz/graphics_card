@@ -1,4 +1,4 @@
-
+#include "../main.asm"
 load own_time, 8
 load SP, 0
 

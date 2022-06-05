@@ -477,7 +477,11 @@ void CommandRoutine(data_source data_source)
 		u8 asset = WaitForByte();
 		u16 length = WaitForByte16();
 		Objects::OnChangingAsset(asset);
-		WriteAssetFromDataSource(asset, length);
+		if(WriteAssetFromDataSource(asset, length) == 0){
+			Objects::OnChangedAsset(asset);
+			I2CCom.lastPing = millis();
+			Status(STATUS_UNKNOWN_ERROR);
+		}
 		Objects::OnChangedAsset(asset);
 		I2CCom.lastPing = millis();
 		Status(STATUS_OK);
@@ -494,7 +498,9 @@ void CommandRoutine(data_source data_source)
 			Objects::OnChangingAsset(asset);
 			last_asset_write_finished = 0;
 		}
+		printf("write @ %u l:%u o:%u(%u)\n", asset, length, offset, length+offset);
 		WriteAssetFromDataSource(asset, length, offset);
+		printf("asset_size: %u\n",alloc_table[asset].length);
 		if (segment_location == 255 || segment_location == 254)
 		{
 			Objects::OnChangedAsset(asset);
@@ -526,6 +532,10 @@ void CommandRoutine(data_source data_source)
 	//TEST cmd
 	else if (cmd == 254)
 	{
+		u8 asset = WaitForByte();
+		for(int i =0;i<alloc_table[asset].length;i++){
+			putu(alloc_table[asset].data[i]);
+		}
 	}
 	else if (cmd == 255)
 	{

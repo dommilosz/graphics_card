@@ -18,63 +18,13 @@ void NextBuff(u16 length, u8 *buff, Object *obj)
     }
 }
 
-u8 WriteAssetFromAssetDataSource(u8 asset, u16 length, Object *obj)
+u8 WriteAssetFromAssetDataSource(u8 asset, u16 length, Object *obj,u16 offset = 0xFFFF)
 {
-    if (asset < 1)
-        return 0;
-    RemoveAsset(asset);
-    u16 wi = 0;
-    for (u16 i = 0; i < ALLOC_SECTORS; i++)
-    {
-        if (alloc_table[i] == 0)
-        {
-            alloc_table[i] = asset;
-            memset(alloc_memory + (i * SECTOR_SIZE), 0x00, SECTOR_SIZE);
-            for (u8 w = 0; w < SECTOR_SIZE; w++)
-            {
-                if (wi >= length)
-                    return 1;
-                alloc_memory[(i * SECTOR_SIZE) + w] = NextByte(obj);
-                wi++;
-                if (wi >= length)
-                    return 1;
-            }
-        }
+    if(!PrepareAsset(asset,length,&offset))return 0;
+    for(int i =0;i<length;i++){
+        alloc_table[asset].data[offset+i] = NextByte(obj);
     }
-    return 0;
-}
-
-u8 WriteAssetFromAssetDataSource(u8 asset, u16 length, u16 offset, Object *obj)
-{
-    if (asset < 1)
-        return 0;
-    u16 wi = 0;
-    for (u16 i = 0; i < ALLOC_SECTORS; i++)
-    {
-        if (alloc_table[i] == 0 || alloc_table[i] == asset)
-        {
-            if (alloc_table[i] == 0)
-            {
-                memset(alloc_memory + (i * SECTOR_SIZE), 0x00, SECTOR_SIZE);
-            }
-            alloc_table[i] = asset;
-            for (u8 w = 0; w < SECTOR_SIZE; w++)
-            {
-                if (offset > 0)
-                {
-                    offset--;
-                    continue;
-                }
-                if (wi >= length)
-                    return 1;
-                alloc_memory[(i * SECTOR_SIZE) + w] = NextByte(obj);
-                wi++;
-                if (wi >= length)
-                    return 1;
-            }
-        }
-    }
-    return 0;
+    return 1;
 }
 
 CODE_ADDRESS_TYPE NextAddress(Object *obj)
@@ -459,7 +409,7 @@ bool HandleAssets(u8 instr, Object *obj)
         u16 length = NextProperty(obj);
         if (refresh)
             Objects::OnChangingAsset(asset);
-        WriteAssetFromAssetDataSource(asset, length, offset, obj);
+        WriteAssetFromAssetDataSource(asset, length, obj,offset);
         if (refresh)
         {
             Objects::OnChangedAsset(asset);

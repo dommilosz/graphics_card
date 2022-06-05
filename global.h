@@ -18,6 +18,8 @@ typedef unsigned long int u32;
 typedef signed long long int s64;
 typedef unsigned long long int u64;
 
+typedef u8 (*u8Func)();
+
 typedef unsigned int uint;
 
 typedef unsigned char Bool;
