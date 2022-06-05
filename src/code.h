@@ -18,11 +18,13 @@ void NextBuff(u16 length, u8 *buff, Object *obj)
     }
 }
 
-u8 WriteAssetFromAssetDataSource(u8 asset, u16 length, Object *obj,u16 offset = 0xFFFF)
+u8 WriteAssetFromAssetDataSource(u8 asset, u16 length, Object *obj, u16 offset = 0xFFFF)
 {
-    if(!PrepareAsset(asset,length,&offset))return 0;
-    for(int i =0;i<length;i++){
-        alloc_table[asset].data[offset+i] = NextByte(obj);
+    if (!PrepareAsset(asset, length, &offset))
+        return 0;
+    for (int i = 0; i < length; i++)
+    {
+        alloc_table[asset].data[offset + i] = NextByte(obj);
     }
     return 1;
 }
@@ -409,7 +411,7 @@ bool HandleAssets(u8 instr, Object *obj)
         u16 length = NextProperty(obj);
         if (refresh)
             Objects::OnChangingAsset(asset);
-        WriteAssetFromAssetDataSource(asset, length, obj,offset);
+        WriteAssetFromAssetDataSource(asset, length, obj, offset);
         if (refresh)
         {
             Objects::OnChangedAsset(asset);
@@ -486,7 +488,25 @@ bool HandleAssets(u8 instr, Object *obj)
         sprintf(num_char, "%d", number);
         if (refresh)
             Objects::OnChangingAsset(asset);
-        WriteAsset(asset, (u8*)num_char, 8, offset);
+        WriteAsset(asset, (u8 *)num_char, 8, offset);
+        if (refresh)
+        {
+            Objects::OnChangedAsset(asset);
+            cmd_changed = 1;
+        }
+        return true;
+    }
+    if (instr == 0xA6) //append
+    {
+        u8 asset = NextProperty(obj);
+        u8 refresh = NextByte(obj);
+        u16 length = NextProperty(obj);
+
+        u16 offset = StrlenAsset(asset);
+
+        if (refresh)
+            Objects::OnChangingAsset(asset);
+        WriteAssetFromAssetDataSource(asset, length, obj, offset);
         if (refresh)
         {
             Objects::OnChangedAsset(asset);

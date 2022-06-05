@@ -57,6 +57,15 @@
 	}
 }
 
+#ruledef asset_nooffset
+{
+	assets[{asset:property}] => 
+	{
+		assert(asset > 0);
+		asset
+	}
+}
+
 #ruledef asset
 {
 	assets[{asset:property}] => 
@@ -144,6 +153,8 @@
 	rnd {prop:property_single} => prop @ 0xC000
 	rnd {prop:property_single}, {max:property}=> 0xC001 @ prop @ max
 	rnd {prop:property_single}, {min:property}, {max:property} => 0xC002 @ prop @ min @ max
+	
+	append {asset:asset_nooffset}, {string:string} => 0xA6 @ asset @ 0x00 @ string
 	
 	push {prop:property} => 0xE3 @ prop
 	pop {prop:property} => 0xE4 @ prop
